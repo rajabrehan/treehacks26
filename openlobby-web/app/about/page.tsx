@@ -10,7 +10,7 @@ export default function AboutPage() {
           What OpenLobby uses.
         </h1>
         <p className="mt-4 text-[15px] leading-[1.75] text-[color:var(--muted)]">
-          Demo mode is seeded for storytelling and UI polish. Production mode should ingest from:
+          OpenLobby is designed for live ingestion and derived search. The data pipeline ingests from:
         </p>
 
         <div className="mt-8 grid gap-4">
@@ -33,8 +33,8 @@ export default function AboutPage() {
         <div className="mt-10 rounded-[calc(var(--radius)+10px)] border border-[color:var(--fog)] bg-[color:var(--card)] p-6 shadow-[0_22px_70px_var(--shadow)]">
           <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[color:var(--muted-2)]">Important</p>
           <p className="mt-3 text-[14px] leading-[1.75] text-[color:var(--muted)]">
-            Do not ship seeded headlines/photos publicly without verifying rights and attribution. The demo pack is for
-            hackathon iteration. Replace it with rights-safe assets and link out to sources in production.
+            Always link out to sources and avoid republishing full articles. For reliability, consider proxying and
+            caching images and text in Supabase Storage/DB after you confirm rights and terms.
           </p>
         </div>
       </main>
@@ -50,4 +50,3 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     </div>
   );
 }
-

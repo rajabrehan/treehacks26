@@ -1,0 +1,34 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e4]:
+      - link "OpenLobby Corporate Influence Tracker" [ref=e5] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e6]: OpenLobby
+        - generic [ref=e7]: Corporate Influence Tracker
+      - navigation [ref=e8]:
+        - link "Explore" [ref=e9] [cursor=pointer]:
+          - /url: /explore
+        - link "Cases" [ref=e10] [cursor=pointer]:
+          - /url: /cases
+        - link "Ask" [ref=e11] [cursor=pointer]:
+          - /url: /ask
+        - link "About data" [ref=e12] [cursor=pointer]:
+          - /url: /about
+      - generic [ref=e13]:
+        - link "Quick search" [ref=e14] [cursor=pointer]:
+          - /url: /search?q=ai%20regulation
+        - button "Sign in" [ref=e15]
+    - main [ref=e16]:
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - paragraph [ref=e19]: Cases
+          - heading "Case Files" [level=1] [ref=e20]
+          - paragraph [ref=e21]: "Live cases are generated via Perplexity Sonar and stored in Supabase (`case_files`). No seeded content."
+        - generic [ref=e22]:
+          - paragraph [ref=e23]: Active case
+          - paragraph [ref=e24]: —
+      - generic [ref=e25]:
+        - paragraph [ref=e26]: Error
+        - paragraph [ref=e27]: "cases failed: 503"
+  - button "Open Next.js Dev Tools" [ref=e33] [cursor=pointer]:
+    - img [ref=e34]

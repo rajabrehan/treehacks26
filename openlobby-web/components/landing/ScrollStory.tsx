@@ -59,8 +59,10 @@ export function ScrollStory({
 
   const activeStep = useMemo(() => steps.find((s) => s.id === activeStepId) ?? steps[0], [steps, activeStepId]);
   const related = useMemo(() => {
-    const set = new Set(activeStep?.related_headline_ids ?? []);
-    return news.filter((n) => set.has(n.id)).slice(0, 6);
+    // In the live system, steps carry related URLs (and optionally doc IDs) rather than seeded headline IDs.
+    const urls = (activeStep?.related_urls ?? []).slice(0, 6);
+    const set = new Set(urls);
+    return news.filter((n) => set.has(n.url)).slice(0, 6);
   }, [activeStep, news]);
 
   return (
@@ -102,14 +104,17 @@ export function ScrollStory({
           </div>
 
           <div className="mt-4 overflow-hidden rounded-[calc(var(--radius)+10px)] border border-[color:var(--fog)]">
-            <Image
-              src={activeStep?.collage_image_urls?.[0] ?? activeCase?.hero_image_url ?? "/demo/images/pic-01.jpg"}
-              alt=""
-              width={1200}
-              height={800}
-              className="h-[220px] w-full object-cover grayscale-[20%] contrast-[1.12] saturate-[0.82]"
-            />
-            <div className="absolute inset-0" />
+            {activeStep?.collage_image_urls?.[0] || activeCase?.hero_image_url ? (
+              <Image
+                src={activeStep?.collage_image_urls?.[0] ?? activeCase?.hero_image_url ?? ""}
+                alt=""
+                width={1200}
+                height={800}
+                className="h-[220px] w-full object-cover grayscale-[20%] contrast-[1.12] saturate-[0.82]"
+              />
+            ) : (
+              <div className="h-[220px] w-full bg-[radial-gradient(900px_420px_at_40%_30%,rgba(224,58,62,0.18),transparent_60%),radial-gradient(700px_420px_at_72%_70%,rgba(196,127,58,0.18),transparent_55%),linear-gradient(180deg,rgba(7,10,15,0.25),rgba(7,10,15,0.85))]" />
+            )}
           </div>
 
           <div className="mt-4">
@@ -147,7 +152,7 @@ export function ScrollStory({
         style={{ scrollSnapType: "y mandatory" }}
       >
         <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[color:var(--muted-2)]">
-          {activeCase?.dek ?? "Seeded case file"}
+          {activeCase?.dek ?? "Case file"}
         </p>
 
         <div className="mt-4 grid gap-4">
@@ -274,7 +279,9 @@ function MiniViz({ step }: { step: CaseStep | undefined }) {
               <circle cx="164" cy="98" r="8" fill="rgba(244,240,232,0.20)" />
             </g>
           </svg>
-          <p className="mt-1 text-[12px] text-[color:var(--muted)]">Preview only in demo; expands in full mode.</p>
+          <p className="mt-1 text-[12px] text-[color:var(--muted)]">
+            This stage renders lightweight previews; full graph mode comes via `/api/graph`.
+          </p>
         </div>
       )}
     </div>

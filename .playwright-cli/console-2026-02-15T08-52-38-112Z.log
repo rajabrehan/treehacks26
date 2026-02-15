@@ -1,0 +1,13 @@
+[    5215ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/:0
+[    7386ms] Error: cases failed: 500
+    at fetchCases (about://React/Server/file:///Users/akhildeo/treehacks26/openlobby-web/.next/dev/server/chunks/ssr/%5Broot-of-the-server%5D__269ff487._.js?6:88:22)
+    at  Home (about://React/Server/file:///Users/akhildeo/treehacks26/openlobby-web/.next/dev/server/chunks/ssr/%5Broot-of-the-server%5D__269ff487._.js?7:137:27)
+    at resolveErrorDev (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_9212ccad._.js:1894:148)
+    at processFullStringRow (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_9212ccad._.js:2402:29)
+    at processFullBinaryRow (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_9212ccad._.js:2361:9)
+    at processBinaryChunk (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_9212ccad._.js:2470:221)
+    at progress (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_9212ccad._.js:2640:13)
+[   13431ms] [WARNING] The resource http://localhost:3000/_next/static/media/68d403cf9f2c68c5-s.p.f9f15f61.woff2 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ http://localhost:3000/:0
+[   13433ms] [WARNING] The resource http://localhost:3000/_next/static/media/e41d5df559864f9e-s.p.380d09ea.woff2 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ http://localhost:3000/:0
+[   13433ms] [WARNING] The resource http://localhost:3000/_next/static/chunks/%5Broot-of-the-server%5D__3b0b438a._.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ http://localhost:3000/:0
+[   13433ms] [WARNING] The resource http://localhost:3000/_next/static/media/a9a434ecf764164f-s.p.73974b4a.woff2 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ http://localhost:3000/:0

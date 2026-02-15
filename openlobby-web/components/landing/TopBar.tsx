@@ -2,9 +2,32 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import type { Session } from "@supabase/supabase-js";
+import { supabaseBrowser } from "@/lib/supabase";
 
 export function TopBar() {
   const pathname = usePathname();
+  const [session, setSession] = useState<Session | null>(null);
+
+  const supabaseReady = useMemo(() => {
+    return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  }, []);
+
+  useEffect(() => {
+    if (!supabaseReady) return;
+    let sb: ReturnType<typeof supabaseBrowser> | null = null;
+    try {
+      sb = supabaseBrowser();
+    } catch {
+      return;
+    }
+    sb.auth.getSession().then(({ data }) => setSession(data.session ?? null));
+    const { data: sub } = sb.auth.onAuthStateChange((_event, next) => setSession(next));
+    return () => {
+      sub.subscription.unsubscribe();
+    };
+  }, [supabaseReady]);
 
   return (
     <div className="sticky top-0 z-50 border-b border-[color:var(--fog)] bg-[color:rgba(7,10,15,0.72)] backdrop-blur">
@@ -21,6 +44,9 @@ export function TopBar() {
         <nav className="hidden items-center gap-2 md:flex">
           <NavLink href="/explore" active={pathname?.startsWith("/explore")}>
             Explore
+          </NavLink>
+          <NavLink href="/cases" active={pathname?.startsWith("/cases")}>
+            Cases
           </NavLink>
           <NavLink href="/ask" active={pathname?.startsWith("/ask")}>
             Ask
@@ -40,10 +66,26 @@ export function TopBar() {
           <button
             type="button"
             className="rounded-full bg-[color:var(--ink-0)] px-4 py-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[color:var(--ink-900)] transition hover:brightness-110"
-            // Auth is wired later. For hackathon/demo, keep the affordance.
-            onClick={() => alert("Auth is stubbed in demo mode. Wire Supabase to enable real accounts.")}
+            onClick={async () => {
+              try {
+                const sb = supabaseBrowser();
+                if (session) {
+                  await sb.auth.signOut();
+                  return;
+                }
+                const redirectTo = `${window.location.origin}/auth/callback`;
+                const { error } = await sb.auth.signInWithOAuth({
+                  provider: "google",
+                  options: { redirectTo },
+                });
+                if (error) throw error;
+              } catch (e) {
+                const m = e instanceof Error ? e.message : "Auth failed.";
+                alert(m);
+              }
+            }}
           >
-            Sign in
+            {session ? "Sign out" : "Sign in"}
           </button>
         </div>
       </div>
@@ -74,4 +116,3 @@ function NavLink({
     </Link>
   );
 }
-

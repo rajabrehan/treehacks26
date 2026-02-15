@@ -16,11 +16,12 @@ import { useRouter } from "next/navigation";
 type Props = {
   news: NewsItem[];
   cases: CaseFile[];
+  errorMessage?: string | null;
 };
 
 type Mode = "search" | "ask" | "case";
 
-export function LandingClient({ news, cases }: Props) {
+export function LandingClient({ news, cases, errorMessage }: Props) {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("search");
   const [q, setQ] = useState("");
@@ -32,8 +33,12 @@ export function LandingClient({ news, cases }: Props) {
   );
 
   const collageImages = useMemo(() => {
+    const picks = news
+      .map((n) => n.image_url)
+      .filter((u): u is string => typeof u === "string" && u.length > 0)
+      .slice(0, 18);
+    if (picks.length === 0) return [];
     // Intentional repetition for a "wall of clippings" feel.
-    const picks = news.slice(0, 18).map((n) => n.image_url);
     return Array.from({ length: 24 }, (_, i) => picks[i % picks.length]);
   }, [news]);
 
@@ -44,13 +49,26 @@ export function LandingClient({ news, cases }: Props) {
     if (mode === "ask") router.push(`/ask?q=${encodeURIComponent(v)}`);
     if (mode === "case") {
       const c = cases[0];
-      router.push(`/explore?case=${encodeURIComponent(c?.id ?? "")}`);
+      router.push(`/cases?case=${encodeURIComponent(c?.id ?? "")}`);
     }
   }
 
   return (
     <div className="ol-mesh ol-grain min-h-dvh">
       <TopBar />
+      {errorMessage ? (
+        <div className="mx-auto max-w-[1180px] px-5 pt-6">
+          <div className="rounded-[calc(var(--radius)+10px)] border border-[color:rgba(224,58,62,0.35)] bg-[color:rgba(224,58,62,0.08)] p-5">
+            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[color:rgba(224,58,62,0.86)]">
+              Degraded mode
+            </p>
+            <p className="mt-2 text-[14px] leading-[1.6] text-[color:var(--muted)]">{errorMessage}</p>
+            <p className="mt-2 text-[13px] leading-[1.6] text-[color:var(--muted)]">
+              Configure `NEXT_PUBLIC_API_URL` (web) and `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` (api) to enable live content.
+            </p>
+          </div>
+        </div>
+      ) : null}
 
       {/* HERO */}
       <header className="relative mx-auto max-w-[1180px] px-5 pb-18 pt-12 md:pb-22 md:pt-18">
@@ -62,7 +80,7 @@ export function LandingClient({ news, cases }: Props) {
                   Corporate Influence Tracker
                 </p>
                 <span className="rounded-full border border-[color:var(--fog)] bg-[color:var(--card-2)] px-3 py-1 font-mono text-[11px] text-[color:var(--muted)]">
-                  Demo-ready
+                  Live index
                 </span>
               </div>
 
@@ -125,7 +143,7 @@ export function LandingClient({ news, cases }: Props) {
                     mode={mode}
                     onPick={(pick) => {
                       if (pick.kind === "case") {
-                        router.push(`/explore?case=${encodeURIComponent(pick.value)}`);
+                        router.push(`/cases?case=${encodeURIComponent(pick.value)}`);
                         return;
                       }
                       setMode(pick.kind);
@@ -138,7 +156,7 @@ export function LandingClient({ news, cases }: Props) {
                 <div className="mt-6 flex flex-wrap items-center gap-3 text-[12px] text-[color:var(--muted-2)]">
                   <span className="font-mono uppercase tracking-[0.22em]">Signals</span>
                   <span className="rounded-full border border-[color:var(--fog)] bg-[color:rgba(244,240,232,0.02)] px-3 py-1">
-                    60 seeded headlines
+                    Live headlines
                   </span>
                   <span className="rounded-full border border-[color:var(--fog)] bg-[color:rgba(244,240,232,0.02)] px-3 py-1">
                     2 case files
@@ -151,7 +169,21 @@ export function LandingClient({ news, cases }: Props) {
             </div>
 
             <div className="relative">
-              <PhotoMosaic images={collageImages} />
+              {collageImages.length ? (
+                <PhotoMosaic images={collageImages} />
+              ) : (
+                <div className="relative h-[360px] overflow-hidden rounded-[calc(var(--radius)+8px)] border border-[color:var(--fog)] bg-[color:rgba(7,10,15,0.45)] md:h-full">
+                  <div className="absolute inset-0 bg-[radial-gradient(900px_420px_at_40%_30%,rgba(224,58,62,0.18),transparent_60%),radial-gradient(700px_420px_at_72%_70%,rgba(196,127,58,0.18),transparent_55%)]" />
+                  <div className="absolute bottom-0 left-0 right-0 p-6">
+                    <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[color:var(--muted-2)]">
+                      No images yet
+                    </p>
+                    <p className="mt-2 font-serif text-[20px] leading-[1.1] text-[color:var(--ink-0)]">
+                      Configure news ingestion to populate the collage.
+                    </p>
+                  </div>
+                </div>
+              )}
               <div className="pointer-events-none absolute inset-0 rounded-[calc(var(--radius)+8px)] ring-1 ring-[color:var(--fog)]" />
               <div className="pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full bg-[color:rgba(224,58,62,0.14)] blur-3xl" />
               <div className="pointer-events-none absolute -bottom-10 -left-10 h-52 w-52 rounded-full bg-[color:rgba(196,127,58,0.16)] blur-3xl" />
@@ -182,7 +214,7 @@ export function LandingClient({ news, cases }: Props) {
             </h2>
           </div>
           <p className="hidden max-w-[44ch] text-right text-[13px] leading-[1.6] text-[color:var(--muted)] md:block">
-            Seeded headlines in demo mode. In full mode: `/api/news/top` with caching and provenance.
+            Live headlines via `/api/news/top` (Perplexity Sonar + caching in Supabase).
           </p>
         </div>
 
@@ -195,7 +227,16 @@ export function LandingClient({ news, cases }: Props) {
               className="group overflow-hidden rounded-[calc(var(--radius)+10px)] border border-[color:var(--fog)] bg-[color:var(--card)] text-left shadow-[0_22px_70px_var(--shadow)] transition hover:border-[color:rgba(224,58,62,0.55)]"
             >
               <div className="relative h-[150px]">
-                <Image src={n.image_url} alt="" fill className="object-cover opacity-80 transition group-hover:scale-[1.02]" />
+                {n.image_url ? (
+                  <Image
+                    src={n.image_url}
+                    alt=""
+                    fill
+                    className="object-cover opacity-80 transition group-hover:scale-[1.02]"
+                  />
+                ) : (
+                  <div className="absolute inset-0 bg-[radial-gradient(700px_260px_at_30%_40%,rgba(224,58,62,0.18),transparent_60%),linear-gradient(180deg,rgba(7,10,15,0.2),rgba(7,10,15,0.95))]" />
+                )}
                 <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent,rgba(7,10,15,0.96))]" />
                 <div className="absolute left-4 top-4 inline-flex rounded-full border border-[color:var(--fog)] bg-[color:rgba(7,10,15,0.55)] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.22em] text-[color:var(--muted)]">
                   {n.source}
@@ -203,7 +244,9 @@ export function LandingClient({ news, cases }: Props) {
               </div>
               <div className="p-5">
                 <p className="font-serif text-[18px] leading-[1.15] text-[color:var(--ink-0)]">{n.title}</p>
-                <p className="mt-2 line-clamp-2 text-[13px] leading-[1.65] text-[color:var(--muted)]">{n.excerpt}</p>
+                <p className="mt-2 line-clamp-2 text-[13px] leading-[1.65] text-[color:var(--muted)]">
+                  {n.excerpt || "Click to open. Ingestion attaches excerpts as available."}
+                </p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {(n.tags ?? []).slice(0, 2).map((t) => (
                     <span
@@ -232,10 +275,10 @@ export function LandingClient({ news, cases }: Props) {
             </h2>
           </div>
           <Link
-            href="/explore"
+            href="/cases"
             className="hidden rounded-full border border-[color:var(--fog)] bg-[color:rgba(7,10,15,0.45)] px-5 py-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[color:var(--muted)] transition hover:border-[color:rgba(224,58,62,0.55)] md:inline-flex"
           >
-            Open explorer
+            Open case files
           </Link>
         </div>
 
@@ -256,8 +299,8 @@ export function LandingClient({ news, cases }: Props) {
                 Want the full graph?
               </h3>
               <p className="mt-4 text-[15px] leading-[1.6] text-[color:var(--muted)]">
-                The landing page is the hook. The explorer is the proof. In demo mode it’s a staged experience; in
-                full mode it expands via `/api/graph` and hydrates from Supabase.
+                The landing page is the hook. The explorer is the proof. Today it’s a staged experience; next it
+                expands via `/api/graph` and hydrates from Supabase.
               </p>
 
               <div className="mt-7 flex flex-wrap gap-3">
@@ -277,21 +320,25 @@ export function LandingClient({ news, cases }: Props) {
             </div>
 
             <div className="relative overflow-hidden rounded-[calc(var(--radius)+10px)] border border-[color:var(--fog)] bg-[color:rgba(7,10,15,0.45)]">
-              <Image
-                src={cases[0]?.hero_image_url ?? "/demo/images/pic-01.jpg"}
-                alt="Case hero"
-                width={1200}
-                height={800}
-                className="h-full w-full object-cover opacity-80"
-                priority={false}
-              />
+              {cases[0]?.hero_image_url ? (
+                <Image
+                  src={cases[0]?.hero_image_url}
+                  alt="Case hero"
+                  width={1200}
+                  height={800}
+                  className="h-full w-full object-cover opacity-80"
+                  priority={false}
+                />
+              ) : (
+                <div className="absolute inset-0 bg-[radial-gradient(900px_500px_at_20%_20%,rgba(224,58,62,0.22),transparent_55%),linear-gradient(180deg,transparent,rgba(7,10,15,0.92))]" />
+              )}
               <div className="absolute inset-0 bg-[radial-gradient(900px_500px_at_20%_20%,rgba(224,58,62,0.22),transparent_55%),linear-gradient(180deg,transparent,rgba(7,10,15,0.92))]" />
               <div className="absolute bottom-0 left-0 right-0 p-6">
                 <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[color:rgba(244,240,232,0.72)]">
-                  Demo image pack
+                  Live sources
                 </p>
                 <p className="mt-2 font-serif text-[22px] leading-[1.1] text-[color:var(--ink-0)]">
-                  Replace seeded photos with rights-safe assets before shipping publicly.
+                  Images are pulled from page metadata (og:image). Broken links happen; cache later if needed.
                 </p>
               </div>
             </div>

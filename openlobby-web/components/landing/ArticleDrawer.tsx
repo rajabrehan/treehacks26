@@ -55,13 +55,17 @@ export function ArticleDrawer({
             </div>
 
             <div className="mt-5 overflow-hidden rounded-[calc(var(--radius)+10px)] border border-[color:var(--fog)]">
-              <Image
-                src={article.image_url}
-                alt=""
-                width={900}
-                height={600}
-                className="h-[220px] w-full object-cover grayscale-[20%] contrast-[1.12] saturate-[0.82]"
-              />
+              {article.image_url ? (
+                <Image
+                  src={article.image_url}
+                  alt=""
+                  width={900}
+                  height={600}
+                  className="h-[220px] w-full object-cover grayscale-[20%] contrast-[1.12] saturate-[0.82]"
+                />
+              ) : (
+                <div className="h-[220px] w-full bg-[radial-gradient(900px_420px_at_40%_30%,rgba(224,58,62,0.18),transparent_60%),radial-gradient(700px_420px_at_72%_70%,rgba(196,127,58,0.18),transparent_55%),linear-gradient(180deg,rgba(7,10,15,0.25),rgba(7,10,15,0.85))]" />
+              )}
             </div>
 
             <p className="mt-5 text-[15px] leading-[1.65] text-[color:var(--muted)]">{article.excerpt}</p>
@@ -82,7 +86,8 @@ export function ArticleDrawer({
                 Note
               </p>
               <p className="mt-2 text-[13px] leading-[1.6] text-[color:var(--muted)]">
-                These are seeded demo headlines. Production mode should link out and avoid republishing full articles.
+                Headlines are linked out to the original source. Store full text for retrieval/LLM use, but do not
+                republish entire articles.
               </p>
               <a
                 href={article.url}
@@ -99,4 +104,3 @@ export function ArticleDrawer({
     </div>
   );
 }
-

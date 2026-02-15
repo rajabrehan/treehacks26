@@ -1,0 +1,65 @@
+services:
+  - type: web
+    name: openlobby-api
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: CORS_ALLOW_ORIGINS
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: ELASTIC_CLOUD_ID
+        sync: false
+      - key: ELASTIC_API_KEY
+        sync: false
+      - key: JINA_API_KEY
+        sync: false
+      - key: PERPLEXITY_API_KEY
+        sync: false
+      - key: BRIGHTDATA_WEB_UNLOCKER_URL
+        sync: false
+      - key: BRIGHTDATA_WEB_UNLOCKER_TOKEN
+        sync: false
+      - key: MODAL_TOKEN_ID
+        sync: false
+      - key: MODAL_TOKEN_SECRET
+        sync: false
+      - key: INGEST_SECRET
+        generateValue: true
+      - key: NEWS_TOPICS
+        sync: false
+      - key: NEWS_LIMIT_DEFAULT
+        sync: false
+
+  - type: cron
+    name: openlobby-refresh
+    runtime: python
+    schedule: "0 */2 * * *" # every 2 hours
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m app.cron
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: ELASTIC_CLOUD_ID
+        sync: false
+      - key: ELASTIC_API_KEY
+        sync: false
+      - key: JINA_API_KEY
+        sync: false
+      - key: PERPLEXITY_API_KEY
+        sync: false
+      - key: BRIGHTDATA_WEB_UNLOCKER_URL
+        sync: false
+      - key: BRIGHTDATA_WEB_UNLOCKER_TOKEN
+        sync: false
+      - key: NEWS_TOPICS
+        sync: false
+      - key: NEWS_LIMIT_DEFAULT
+        sync: false

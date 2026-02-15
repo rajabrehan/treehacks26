@@ -23,7 +23,7 @@ const SOURCES = [
   },
   {
     name: "News",
-    desc: "Seeded headlines in demo mode. Live ingestion later via RSS scraping.",
+    desc: "Live headlines via Perplexity Sonar + canonical caching in Supabase; optional Bright Data for hard pages.",
     badge: "Narrative",
   },
 ];
@@ -39,7 +39,7 @@ export function ProofShelf() {
           </h3>
         </div>
         <p className="hidden max-w-[42ch] text-right text-[13px] leading-[1.6] text-[color:var(--muted)] md:block">
-          Canonical data lives in Supabase. Elasticsearch is derived and rebuildable. Demo mode is seeded.
+          Canonical data lives in Supabase. Elasticsearch is derived and rebuildable. No seeded data.
         </p>
       </div>
 
@@ -62,4 +62,3 @@ export function ProofShelf() {
     </div>
   );
 }
-

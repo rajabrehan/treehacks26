@@ -1,19 +1,20 @@
-import { DEMO_ASK_EXAMPLES } from "@/lib/demo-data";
 import { TopBar } from "@/components/landing/TopBar";
+import { ask } from "@/lib/api";
 import Link from "next/link";
 
-export default function AskPage({ searchParams }: { searchParams: { q?: string } }) {
-  const q = (searchParams.q ?? "").trim();
-  const match =
-    DEMO_ASK_EXAMPLES.find((e) => e.question.toLowerCase() === q.toLowerCase()) ??
-    (q
-      ? {
-          question: q,
-          answer:
-            "Demo mode: this answer is seeded. In full mode, the backend would retrieve context via Elasticsearch and generate a cited response via Modal.",
-          sources: [],
-        }
-      : null);
+type SP = { q?: string };
+
+export default async function AskPage({ searchParams }: { searchParams: Promise<SP> }) {
+  const sp = await searchParams;
+  const q = (sp.q ?? "").trim();
+
+  let resp: Awaited<ReturnType<typeof ask>> | null = null;
+  let errorMessage: string | null = null;
+  try {
+    resp = q ? await ask({ question: q, limit: 8 }) : null;
+  } catch (e) {
+    errorMessage = e instanceof Error ? e.message : "Ask failed.";
+  }
 
   return (
     <div className="ol-mesh ol-grain min-h-dvh">
@@ -24,40 +25,41 @@ export default function AskPage({ searchParams }: { searchParams: { q?: string }
           Natural language, with receipts.
         </h1>
         <p className="mt-3 max-w-[70ch] text-[15px] leading-[1.65] text-[color:var(--muted)]">
-          In demo mode this page uses seeded examples. In full mode it calls `/api/ask` after retrieval from
-          Elasticsearch.
+          Live: retrieves context from Elasticsearch and answers via Modal (open-source model).
         </p>
 
         <div className="mt-8 rounded-[calc(var(--radius)+10px)] border border-[color:var(--fog)] bg-[color:var(--card)] p-6 shadow-[0_22px_70px_var(--shadow)]">
           <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[color:var(--muted-2)]">Question</p>
           <p className="mt-2 font-serif text-[22px] leading-[1.2] text-[color:var(--ink-0)]">
-            {match?.question ?? "Click an example on the homepage."}
+            {q || "Click an Ask chip on the homepage."}
           </p>
 
           <div className="mt-6 border-t border-[color:var(--fog)] pt-6">
             <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[color:var(--muted-2)]">Answer</p>
             <p className="mt-3 text-[15px] leading-[1.7] text-[color:var(--muted)]">
-              {match?.answer ??
-                "Open `/` and click a preloaded Ask example chip. This page will then render a seeded response."}
+              {errorMessage
+                ? `Degraded mode: ${errorMessage}`
+                : resp?.answer ||
+                "No question provided. Use `/ask?q=...` or click a preloaded example chip on the landing page."}
             </p>
           </div>
 
-          {match?.sources?.length ? (
+          {resp?.sources?.length ? (
             <div className="mt-6 border-t border-[color:var(--fog)] pt-6">
-              <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[color:var(--muted-2)]">
-                Seeded sources
-              </p>
+              <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[color:var(--muted-2)]">Sources</p>
               <div className="mt-3 grid gap-3">
-                {match.sources.map((s) => (
+                {resp.sources.map((s) => (
                   <a
-                    key={s.url}
-                    href={s.url}
+                    key={s.id}
+                    href={s.url ?? "#"}
                     target="_blank"
                     rel="noreferrer"
                     className="rounded-[calc(var(--radius)+10px)] border border-[color:var(--fog)] bg-[color:rgba(244,240,232,0.02)] p-4 transition hover:border-[color:rgba(224,58,62,0.55)]"
                   >
                     <p className="font-serif text-[16px] leading-[1.2] text-[color:var(--ink-0)]">{s.title}</p>
-                    <p className="mt-2 text-[13px] leading-[1.6] text-[color:var(--muted)]">{s.quote}</p>
+                    {s.snippet ? (
+                      <p className="mt-2 text-[13px] leading-[1.6] text-[color:var(--muted)]">{s.snippet}</p>
+                    ) : null}
                     <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.22em] text-[color:rgba(224,58,62,0.82)]">
                       Open link
                     </p>
@@ -86,4 +88,3 @@ export default function AskPage({ searchParams }: { searchParams: { q?: string }
     </div>
   );
 }
-

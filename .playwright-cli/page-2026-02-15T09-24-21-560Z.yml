@@ -1,0 +1,174 @@
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - link "OpenLobby Corporate Influence Tracker" [ref=e5] [cursor=pointer]:
+      - /url: /
+      - generic [ref=e6]: OpenLobby
+      - generic [ref=e7]: Corporate Influence Tracker
+    - navigation [ref=e8]:
+      - link "Explore" [ref=e9] [cursor=pointer]:
+        - /url: /explore
+      - link "Cases" [ref=e10] [cursor=pointer]:
+        - /url: /cases
+      - link "Ask" [ref=e11] [cursor=pointer]:
+        - /url: /ask
+      - link "About data" [ref=e12] [cursor=pointer]:
+        - /url: /about
+    - generic [ref=e13]:
+      - link "Quick search" [ref=e14] [cursor=pointer]:
+        - /url: /search?q=ai%20regulation
+      - button "Sign in" [ref=e15]
+  - generic [ref=e17]:
+    - paragraph [ref=e18]: Degraded mode
+    - paragraph [ref=e19]: "news/top failed: 503"
+    - paragraph [ref=e20]: "Configure `NEXT_PUBLIC_API_URL` (web) and `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` (api) to enable live content."
+  - banner [ref=e21]:
+    - generic [ref=e22]:
+      - generic [ref=e23]:
+        - generic [ref=e24]:
+          - generic [ref=e25]:
+            - paragraph [ref=e26]: Corporate Influence Tracker
+            - generic [ref=e27]: Live index
+          - heading "Follow the money. Read the receipts." [level=1] [ref=e28]:
+            - text: Follow the money.
+            - text: Read the receipts.
+          - paragraph [ref=e29]: "A noir newsroom interface for political influence: headlines, case files, and a graph that turns buried disclosures into something you can actually navigate."
+          - generic [ref=e30]:
+            - generic [ref=e31]:
+              - button "Search entities" [ref=e32]
+              - button "Ask a question" [ref=e33]
+              - button "Explore a case" [ref=e34]
+            - generic [ref=e35]:
+              - textbox "Search any company, politician, PAC, lobbyist..." [ref=e37]
+              - button "Open" [ref=e38]
+            - generic [ref=e40]:
+              - button "search ExxonMobil lobbying network active" [ref=e41]:
+                - generic [ref=e42]: search
+                - generic [ref=e43]: ExxonMobil lobbying network
+                - generic [ref=e44]: active
+              - button "search Pfizer drug pricing influence active" [ref=e45]:
+                - generic [ref=e46]: search
+                - generic [ref=e47]: Pfizer drug pricing influence
+                - generic [ref=e48]: active
+              - button "search Meta AI safety meetings active" [ref=e49]:
+                - generic [ref=e50]: search
+                - generic [ref=e51]: Meta AI safety meetings
+                - generic [ref=e52]: active
+              - button "search Coinbase crypto oversight push active" [ref=e53]:
+                - generic [ref=e54]: search
+                - generic [ref=e55]: Coinbase crypto oversight push
+                - generic [ref=e56]: active
+              - button "search Top donors to a swing member active" [ref=e57]:
+                - generic [ref=e58]: search
+                - generic [ref=e59]: Top donors to a swing member
+                - generic [ref=e60]: active
+              - button "search Senate Commerce Committee staff active" [ref=e61]:
+                - generic [ref=e62]: search
+                - generic [ref=e63]: Senate Commerce Committee staff
+                - generic [ref=e64]: active
+              - button "ask Who pushed hardest on AI safety language?" [ref=e65]:
+                - generic [ref=e66]: ask
+                - generic [ref=e67]: Who pushed hardest on AI safety language?
+              - button "ask Which pharma players shaped the price cap vote?" [ref=e68]:
+                - generic [ref=e69]: ask
+                - generic [ref=e70]: Which pharma players shaped the price cap vote?
+              - button "ask How do carveouts show up in amendments?" [ref=e71]:
+                - generic [ref=e72]: ask
+                - generic [ref=e73]: How do carveouts show up in amendments?
+              - button "ask Summarize the money + messaging pattern" [ref=e74]:
+                - generic [ref=e75]: ask
+                - generic [ref=e76]: Summarize the money + messaging pattern
+              - 'button "case Case file: Price Cap Playbook" [ref=e77]':
+                - generic [ref=e78]: case
+                - generic [ref=e79]: "Case file: Price Cap Playbook"
+              - 'button "case Case file: Safety Bill Sprint" [ref=e80]':
+                - generic [ref=e81]: case
+                - generic [ref=e82]: "Case file: Safety Bill Sprint"
+            - generic [ref=e83]:
+              - generic [ref=e84]: Signals
+              - generic [ref=e85]: Live headlines
+              - generic [ref=e86]: 2 case files
+              - generic [ref=e87]: Scroll-driven viz stage
+        - generic [ref=e91]:
+          - paragraph [ref=e92]: No images yet
+          - paragraph [ref=e93]: Configure news ingestion to populate the collage.
+      - generic [ref=e97]: Live Wire
+    - generic [ref=e98]:
+      - generic [ref=e99]:
+        - paragraph [ref=e100]: Query mode
+        - paragraph [ref=e101]: Search / Ask / Case
+        - paragraph [ref=e102]: One input, three entry points.
+      - generic [ref=e103]:
+        - paragraph [ref=e104]: Derived index
+        - paragraph [ref=e105]: Elasticsearch
+        - paragraph [ref=e106]: Hybrid kNN + BM25 in full mode.
+      - generic [ref=e107]:
+        - paragraph [ref=e108]: Canonical store
+        - paragraph [ref=e109]: Supabase
+        - paragraph [ref=e110]: Auth + Postgres; ES is rebuildable.
+  - generic [ref=e112]:
+    - generic [ref=e113]:
+      - paragraph [ref=e114]: Headline Wall
+      - heading "Today’s noise, organized into clues." [level=2] [ref=e115]
+    - paragraph [ref=e116]: "Live headlines via `/api/news/top` (Perplexity Sonar + caching in Supabase)."
+  - generic [ref=e117]:
+    - generic [ref=e118]:
+      - generic [ref=e119]:
+        - paragraph [ref=e120]: Case Files
+        - heading "Scroll an investigation." [level=2] [ref=e121]
+      - link "Open case files" [ref=e122] [cursor=pointer]:
+        - /url: /cases
+    - generic [ref=e124]:
+      - generic [ref=e126]:
+        - paragraph [ref=e127]: Case File
+        - heading [level=3]
+        - paragraph [ref=e131]: Related headlines
+      - paragraph [ref=e133]: Case file
+  - generic [ref=e134]:
+    - generic [ref=e135]:
+      - generic [ref=e136]:
+        - generic [ref=e137]:
+          - paragraph [ref=e138]: Proof Shelf
+          - heading "Sources, constraints, receipts." [level=3] [ref=e139]
+        - paragraph [ref=e140]: Canonical data lives in Supabase. Elasticsearch is derived and rebuildable. No seeded data.
+      - generic [ref=e141]:
+        - generic [ref=e142]:
+          - generic [ref=e143]:
+            - paragraph [ref=e144]: FEC
+            - generic [ref=e145]: Finance
+          - paragraph [ref=e146]: Campaign contributions, committees, and spending reports.
+        - generic [ref=e147]:
+          - generic [ref=e148]:
+            - paragraph [ref=e149]: Senate LDA
+            - generic [ref=e150]: Lobbying
+          - paragraph [ref=e151]: Lobbying registrations and activity filings (LD-1/LD-2).
+        - generic [ref=e152]:
+          - generic [ref=e153]:
+            - paragraph [ref=e154]: SEC EDGAR
+            - generic [ref=e155]: Filings
+          - paragraph [ref=e156]: Corporate filings, proxies, and executive compensation signals.
+        - generic [ref=e157]:
+          - generic [ref=e158]:
+            - paragraph [ref=e159]: ProPublica
+            - generic [ref=e160]: Legislation
+          - paragraph [ref=e161]: Votes, bills, member metadata (keyed access).
+        - generic [ref=e162]:
+          - generic [ref=e163]:
+            - paragraph [ref=e164]: News
+            - generic [ref=e165]: Narrative
+          - paragraph [ref=e166]: Live headlines via Perplexity Sonar + canonical caching in Supabase; optional Bright Data for hard pages.
+    - generic [ref=e168]:
+      - generic [ref=e169]:
+        - paragraph [ref=e170]: Next
+        - heading "Want the full graph?" [level=3] [ref=e171]
+        - paragraph [ref=e172]: "The landing page is the hook. The explorer is the proof. Today it’s a staged experience; next it expands via `/api/graph` and hydrates from Supabase."
+        - generic [ref=e173]:
+          - link "Open the graph" [ref=e174] [cursor=pointer]:
+            - /url: /explore
+          - link "Search a thread" [ref=e175] [cursor=pointer]:
+            - /url: /search?q=drug%20pricing
+      - generic [ref=e179]:
+        - paragraph [ref=e180]: Live sources
+        - paragraph [ref=e181]: Images are pulled from page metadata (og:image). Broken links happen; cache later if needed.
+  - generic:
+    - button
+    - complementary

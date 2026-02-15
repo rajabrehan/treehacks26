@@ -1,0 +1,66 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e4]:
+      - link "OpenLobby Corporate Influence Tracker" [ref=e5] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e6]: OpenLobby
+        - generic [ref=e7]: Corporate Influence Tracker
+      - navigation [ref=e8]:
+        - link "Explore" [ref=e9] [cursor=pointer]:
+          - /url: /explore
+        - link "Cases" [ref=e10] [cursor=pointer]:
+          - /url: /cases
+        - link "Ask" [ref=e11] [cursor=pointer]:
+          - /url: /ask
+        - link "About data" [ref=e12] [cursor=pointer]:
+          - /url: /about
+      - generic [ref=e13]:
+        - link "Quick search" [ref=e14] [cursor=pointer]:
+          - /url: /search?q=ai%20regulation
+        - button "Sign in" [ref=e15]
+    - generic [ref=e16]:
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - paragraph [ref=e19]: Explore
+          - heading "Graph Explorer" [level=1] [ref=e20]
+          - paragraph [ref=e21]: "Canonical nodes and edges come from Supabase (`entities`, `relationships`). This view calls `/api/graph`."
+        - link "Open entity" [ref=e22] [cursor=pointer]:
+          - /url: /search?q=ai%20regulation
+      - generic [ref=e23]:
+        - generic [ref=e24]:
+          - paragraph [ref=e25]: Seed
+          - textbox "Entity id (e.g. politician:..., company:...)" [ref=e26]
+          - button "Load" [ref=e27]
+          - generic [ref=e28]:
+            - paragraph [ref=e29]: Find entity
+            - textbox "Search entities (name/description)…" [ref=e30]
+          - generic [ref=e31]:
+            - paragraph [ref=e32]: Depth
+            - generic [ref=e33]:
+              - button "1" [ref=e34]
+              - button "2" [ref=e35]
+          - generic [ref=e36]:
+            - paragraph [ref=e37]: Relationship types
+            - generic [ref=e38]:
+              - button "donation on" [ref=e39]:
+                - generic [ref=e40]: donation
+                - generic [ref=e41]: "on"
+              - button "lobbying on" [ref=e42]:
+                - generic [ref=e43]: lobbying
+                - generic [ref=e44]: "on"
+              - button "vote on" [ref=e45]:
+                - generic [ref=e46]: vote
+                - generic [ref=e47]: "on"
+              - button "employment on" [ref=e48]:
+                - generic [ref=e49]: employment
+                - generic [ref=e50]: "on"
+        - generic [ref=e51]:
+          - generic [ref=e52]:
+            - paragraph [ref=e53]: Graph
+            - paragraph [ref=e54]: Pick a seed entity to load the network.
+          - generic [ref=e55]:
+            - generic [ref=e56]: "Seed: —"
+            - generic [ref=e57]: "Depth: 1"
+            - generic [ref=e58]: "Types: donation,lobbying,vote,employment"
+  - button "Open Next.js Dev Tools" [ref=e64] [cursor=pointer]:
+    - img [ref=e65]

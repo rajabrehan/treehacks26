@@ -295,7 +295,7 @@ async def ask_question(request: AskRequest):
 
 #### Landing Support Endpoints: News + Case Files
 
-These endpoints power the Noir Newsroom landing experience. In demo mode (Section 7.2.2), the frontend reads local JSON; in full mode, the backend serves records from Supabase (canonical) and optionally indexes into Elasticsearch (derived).
+These endpoints power the Noir Newsroom landing experience. The frontend calls the backend only (no local fixtures). The backend serves canonical records from Supabase and optionally indexes into Elasticsearch (derived).
 
 - `GET /api/news/top?limit=50`
   - Returns headline cards: `[{ id, title, url, source, published_at, excerpt, image_url, entities_mentioned[] }]`
@@ -473,7 +473,7 @@ create policy "bookmarks_owner" on public.bookmarks
 
 #### 5.1.4 News Documents + Case Files (Canonical, Later)
 
-For the hackathon UI, landing-page “news” and “case files” are seeded from local JSON in demo mode (Section 7.2.2). For the full stack, store canonical records in Supabase and treat Elasticsearch as a derived index.
+Landing-page “news” and “case files” are generated live and cached canonically in Supabase (Section 7.2.2). Elasticsearch remains a derived index.
 
 ```sql
 -- Canonical news / source documents (articles, filings summaries, etc.)
@@ -829,7 +829,7 @@ Background treatment:
    - Source tiles (FEC, Senate LDA, EDGAR, ProPublica, News) describing provenance/limitations
 6. Final CTA:
    - `Open the graph` (to `/explore`)
-   - `Save this investigation` (bookmark; in demo mode local-only)
+   - `Save this investigation` (bookmark; requires auth)
 
 **Interaction spec (scroll-driven changes)**
 
@@ -856,33 +856,31 @@ Homepage shows *at least 12* example actions without typing:
 - 4 ask examples (question-focused) -> `/ask?q=...`
 - 2 case files -> `/explore?case=...` (or scroll into “Case Files” and select)
 
-**Seeded content requirements (demo mode hard requirements)**
+**Content requirements (live-only)**
 
-- 60+ seeded headlines renderable (ticker + “more headlines” grid)
-- 30+ locally stored images (collage + per-case hero images)
+- 60+ headlines retrievable and cacheable in Supabase for the landing experience
+- Headline cards should include: `title`, `url`, `source`, `published_at` (if available), `excerpt`, and optional `image_url`
 
 Mobile behavior:
 
 - Single column layout
 - “Viz stage” becomes an inline panel inserted between cards (sticky disabled)
 
-#### 7.2.2 Demo Mode (Seeded Data, No Infra Required)
+#### 7.2.2 Live-Only Mode (No Seeded/Mock Data)
 
-Demo mode guarantees the landing page is impressive on first run without any deployed backend or external services.
+This build does **not** use seeded/mock data. The landing page is always populated from live sources via the backend:
 
-When `NEXT_PUBLIC_DEMO_MODE=1`:
+- Headlines: `GET /api/news/top?limit=60` (Perplexity Sonar search + canonical caching in Supabase)
+- Case files: `GET /api/cases` and `GET /api/cases/{id}` (generated dynamically via Sonar and stored canonically in Supabase)
+- Photos: derived from page metadata (e.g. `og:image`) and hotlinked initially; optionally proxy/cache later
 
-- Landing reads:
-  - `public/demo/news.json` (headlines)
-  - `public/demo/cases.json` (case files + scrollytelling steps)
-  - `public/demo/images/*` (local images for collage and case heroes)
-- Search and Ask pages:
-  - Prefer seeded responses: `public/demo/search_results.json` and `public/demo/ask_examples.json`
-  - Call the backend only if `NEXT_PUBLIC_API_URL` is set
+**Degraded mode (required)**
 
-Demo content policy:
+If upstream services rate-limit or fail:
 
-- In demo mode, headlines can be curated or fictionalized; production mode should link out to sources and avoid republishing full article text.
+- UI shows an empty state + retry affordance.
+- Backend returns the last-success cached records from Supabase (if available).
+- The system never fabricates content.
 
 #### 7.2.3 Search Results Page (`app/search/page.tsx`)
 
@@ -1026,7 +1024,7 @@ vercel --prod
 
 ### 7.6 Acceptance Criteria (Demo Mode + Full Mode)
 
-Landing page (demo mode):
+Landing page (live-only):
 
 1. Homepage renders with zero backend/external network calls and shows:
    - 12+ clickable example chips
@@ -1042,7 +1040,7 @@ Landing page (demo mode):
 
 Backend (when infra is enabled):
 
-1. `/api/news/top` returns headline cards (seeded initially; later DB-backed).
+1. `/api/news/top` returns headline cards (live search + Supabase cache; never seeded).
 2. `/api/search` uses hybrid Elasticsearch search as documented in Section 5.3.
 
 ---
@@ -1268,17 +1266,15 @@ Output ONLY the XML, nothing else.
 
 ### 9.0 Deployment Levels (Minimum vs Full Stack)
 
-This project is intentionally staged so the frontend demo can ship first, then auth, then the full ingestion/search/LLM stack.
+This project is staged, but remains live-only (no seeded/mock content).
 
-**Minimum to ship the UI demo (No Infra)**
+**Minimum to ship the live UI**
 
-1. Set `NEXT_PUBLIC_DEMO_MODE=1` in the web app.
-2. Include local demo assets:
-   - `public/demo/news.json`
-   - `public/demo/cases.json`
-   - `public/demo/search_results.json`
-   - `public/demo/ask_examples.json`
-   - `public/demo/images/*` (30+ images)
+1. Render API (FastAPI) deployed with:
+   - Perplexity Sonar (web search)
+   - Supabase (canonical cache + case files)
+   - Elasticsearch (derived index for search/RAG)
+2. Vercel web app deployed with `NEXT_PUBLIC_API_URL`.
 
 **Minimum to ship authenticated bookmarking**
 
@@ -1299,9 +1295,8 @@ This project is intentionally staged so the frontend demo can ship first, then a
 
 Ordering note:
 
-- Frontend can be built against seeded JSON immediately.
-- Backend can be built against seeded data next.
-- Ingestion + LLM pipeline can come last without changing the UI contract.
+- Frontend calls backend endpoints only (no local fixtures).
+- Backend can start with news ingestion + document index; add deeper entity/relationship extraction later.
 
 ### 9.1 Service Signup Checklist
 
@@ -1416,70 +1411,28 @@ curl -H 'Authorization: ApiKey YOUR_API_KEY' \
 
 ---
 
-## 10. Database Seeding & Demo Data Strategy
+## 10. Live Ingestion & Cache Strategy (No Seeded Data)
 
-### 10.1 Hackathon Demo Strategy
+The product runs live-only. For hackathon reliability and speed, we cache the last-success results in Supabase and use Elasticsearch as a rebuildable derived index.
 
-For the hackathon demo, we need compelling data that tells a clear story. Rather than trying to ingest everything, we focus on **3–4 hot-button topics** with pre-seeded data.
+### 10.1 Live Bootstrap (First Run)
 
-**Target Demo Scenarios**
+1. Call `POST /api/ingest/news` (protected by `INGEST_SECRET`) to populate `public.documents` from Perplexity Sonar results.
+2. Index documents into Elasticsearch with Jina embeddings (derived).
+3. Landing page reads `GET /api/news/top` (uses cache first, refresh on demand).
+4. Call `GET /api/cases` to generate/store two default case files (AI regulation + drug pricing).
 
-1. Pharma & Drug Pricing: Pfizer, Eli Lilly, Johnson & Johnson lobbying vs. Insulin Price Cap votes
-2. Tech & AI Regulation: Google, Meta, Microsoft lobbying on AI safety bills
-3. Energy & Climate: ExxonMobil, Chevron lobbying vs. EPA emissions rule votes
-4. Finance & Crypto: FTX aftermath, Coinbase lobbying on crypto regulation
+### 10.2 Ongoing Refresh
 
-### 10.2 Seed Script
+- Run a scheduled job (Render Cron or Worker) every 1–3 hours:
+  - Refresh news cache (and reindex)
+  - Regenerate case files daily or when topics materially shift
 
-**`seed_demo_data.py`**
+### 10.3 Failure Modes (Required)
 
-```python
-"""Seed Supabase (canonical) and then index Elasticsearch (derived)."""
-import asyncio
-from app.services.elasticsearch import es
-from app.services.jina import get_embeddings_batch
-from app.services.supabase import supabase_admin
-
-DEMO_ENTITIES = [
-    {'id': 'pfizer', 'type': 'company', 'name': 'Pfizer Inc.',
-     'industry': 'Pharmaceuticals', 'total_lobbying': 13400000,
-     'description': 'Major pharmaceutical company. Spent $13.4M on federal lobbying in 2024...'},
-    {'id': 'sen-smith', 'type': 'politician', 'name': 'Sen. Example (R-TX)',
-     'party': 'R', 'state': 'TX', 'total_donations': 2450000,
-     'description': 'Senior senator from Texas. Top donors include pharmaceutical and energy...'},
-    # ... more entities
-]
-
-DEMO_RELATIONSHIPS = [
-    {'id': 'rel-001', 'type': 'donation', 'source_id': 'pfizer-pac',
-     'target_id': 'sen-smith', 'amount': 45000, 'cycle': '2024',
-     'description': 'Pfizer PAC contributed $45,000 to Sen. Example campaign'},
-    # ... more relationships
-]
-
-async def seed():
-    # 1) Canonical writes go to Supabase
-    supabase_admin.table('entities').upsert(DEMO_ENTITIES).execute()
-    supabase_admin.table('relationships').upsert(DEMO_RELATIONSHIPS).execute()
-
-    # Generate embeddings for all entities
-    texts = [f"{e['name']}: {e['description']}" for e in DEMO_ENTITIES]
-    embeddings = await get_embeddings_batch(texts)
-    
-    for entity, emb in zip(DEMO_ENTITIES, embeddings):
-        entity['embedding'] = emb
-        await es.index(index='openlobby-entities', id=entity['id'], body=entity)
-    
-    # Same for relationships
-    rel_texts = [r['description'] for r in DEMO_RELATIONSHIPS]
-    rel_embeddings = await get_embeddings_batch(rel_texts)
-    
-    for rel, emb in zip(DEMO_RELATIONSHIPS, rel_embeddings):
-        es_doc = {**rel, 'embedding': emb}
-        await es.index(index='openlobby-relationships', id=rel['id'], body=es_doc)
-
-asyncio.run(seed())
-```
+- If Perplexity or fetch fails: return cached Supabase documents (if any).
+- If Elasticsearch is down: `GET /api/search` returns empty results; landing and cases still work from Supabase.
+- If Modal is down: `/api/ask` returns 503; UI shows a non-fabricated error state.
 
 ---
 
@@ -1517,14 +1470,10 @@ asyncio.run(seed())
 ### 13.1 Web App (`openlobby-web/.env.local`)
 
 ```bash
-# Required (demo): zero-infra landing with seeded headlines/cases/images
-NEXT_PUBLIC_DEMO_MODE=1
+# Required: call backend API (Render in prod, localhost in dev)
+NEXT_PUBLIC_API_URL=http://localhost:8000
 
-# Required (non-demo): call backend API
-# NEXT_PUBLIC_API_URL=http://localhost:8000
-# NEXT_PUBLIC_API_URL=https://openlobby-api.onrender.com
-
-# Optional for demo, required for real accounts/bookmarks
+# Optional: required for real accounts/bookmarks
 # NEXT_PUBLIC_SUPABASE_URL=https://xxxxxxxxxxxxxxxx.supabase.co
 # NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 ```
@@ -1577,11 +1526,11 @@ modal secret create huggingface-secret \
   HUGGING_FACE_HUB_TOKEN=hf_xxxxxxxxxxxxxxxx
 ```
 
-### 13.5 Demo Content + Legal Assumptions
+### 13.5 Content + Legal Assumptions
 
-- Demo assets must be legally safe: use locally stored images you own or have explicit rights to.
-- Seeded headlines are either fictionalized or curated in a way you are comfortable displaying; production should link out and avoid republishing full articles.
-- “Topical” on day one means “curated and believable” until live ingestion is enabled.
+- Always link out to sources; avoid republishing full articles.
+- Photos are sourced from page metadata (e.g. `og:image`). Consider proxy/caching only after confirming rights/terms.
+- The system never seeds or fabricates news content; on failure it falls back to last-success cache in Supabase.
 
 ---
 
