@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+:root {
+  --ink-0: #f4f0e8;
+  --ink-900: #070a0f;
+  --steel: #9aa4b2;
+  --blood: #e03a3e;
+  --copper: #c47f3a;
+  --fog: rgba(244, 240, 232, 0.08);
+
+  --background: var(--ink-900);
+  --foreground: var(--ink-0);
+  --muted: rgba(244, 240, 232, 0.72);
+  --muted-2: rgba(154, 164, 178, 0.8);
+  --card: rgba(7, 10, 15, 0.78);
+  --card-2: rgba(7, 10, 15, 0.62);
+  --shadow: rgba(0, 0, 0, 0.55);
+
+  --radius: 18px;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-paper: var(--ink-0);
+  --color-ink: var(--ink-900);
+  --color-steel: var(--steel);
+  --color-blood: var(--blood);
+  --color-copper: var(--copper);
+  --color-fog: var(--fog);
+
+  --font-sans: var(--font-source-serif);
+  --font-serif: var(--font-instrument);
+  --font-mono: var(--font-fragment-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-source-serif), ui-serif, Georgia, serif;
+}
+
+/* Atmosphere helpers */
+.ol-mesh {
+  background:
+    radial-gradient(1200px 800px at 12% 20%, rgba(196, 127, 58, 0.18), transparent 55%),
+    radial-gradient(900px 700px at 80% 16%, rgba(224, 58, 62, 0.12), transparent 60%),
+    radial-gradient(1100px 900px at 70% 85%, rgba(154, 164, 178, 0.14), transparent 65%),
+    linear-gradient(180deg, rgba(7, 10, 15, 0.92) 0%, rgba(7, 10, 15, 0.88) 45%, rgba(7, 10, 15, 0.96) 100%);
+}
+
+.ol-grain {
+  position: relative;
+}
+
+.ol-grain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.22;
+  mix-blend-mode: overlay;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

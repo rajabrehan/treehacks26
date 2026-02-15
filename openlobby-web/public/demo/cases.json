@@ -1,0 +1,485 @@
+[
+  {
+    "id": "pharma-drug-pricing",
+    "title": "The Price Cap Playbook",
+    "dek": "A seeded case file tracing how drug pricing fights attract money, meetings, and messaging.",
+    "hero_image_url": "/demo/images/pic-01.jpg",
+    "tags": [
+      "Drug Pricing",
+      "Pharma",
+      "Seeded"
+    ],
+    "steps": [
+      {
+        "id": "scene-1",
+        "kicker": "Case File 01",
+        "headline": "A bill appears. The money warms up.",
+        "body": "In the first week, committee calendars fill and trade groups publish identical talking points. The pattern is the tell.",
+        "key_finding": {
+          "label": "Lobbying spike (seeded)",
+          "value": "+38%",
+          "note": "Week-over-week on a single issue label."
+        },
+        "related_headline_ids": [
+          "n-002",
+          "n-007",
+          "n-012"
+        ],
+        "collage_image_urls": [
+          "/demo/images/pic-02.jpg",
+          "/demo/images/pic-03.jpg",
+          "/demo/images/pic-04.jpg",
+          "/demo/images/pic-05.jpg",
+          "/demo/images/pic-06.jpg"
+        ],
+        "viz": {
+          "kind": "stat",
+          "label": "Issue heat",
+          "value": "+38%",
+          "note": "Seeded metric for demo storytelling."
+        }
+      },
+      {
+        "id": "scene-2",
+        "kicker": "Money",
+        "headline": "PAC checks cluster around the same offices.",
+        "body": "When contributions arrive in a tight window, it is worth asking: what vote is coming, and who sits on the fence?",
+        "key_finding": {
+          "label": "Contributions (seeded)",
+          "value": "$2.1M",
+          "note": "To a small set of committees and members."
+        },
+        "related_headline_ids": [
+          "n-017",
+          "n-022",
+          "n-027"
+        ],
+        "collage_image_urls": [
+          "/demo/images/pic-07.jpg",
+          "/demo/images/pic-08.jpg",
+          "/demo/images/pic-09.jpg",
+          "/demo/images/pic-10.jpg",
+          "/demo/images/pic-11.jpg"
+        ],
+        "viz": {
+          "kind": "sankey",
+          "label": "Flow",
+          "from": "Industry PACs",
+          "to": "Key offices",
+          "amount": "$2.1M (seeded)"
+        }
+      },
+      {
+        "id": "scene-3",
+        "kicker": "Language",
+        "headline": "Amendments reshape the bill in plain sight.",
+        "body": "A few lines can change who pays, who saves, and who is exempt. Watch for subtle carveouts.",
+        "key_finding": {
+          "label": "Amendments tracked",
+          "value": "11",
+          "note": "Seeded count, demo-only."
+        },
+        "related_headline_ids": [
+          "n-032",
+          "n-037",
+          "n-042"
+        ],
+        "collage_image_urls": [
+          "/demo/images/pic-12.jpg",
+          "/demo/images/pic-13.jpg",
+          "/demo/images/pic-14.jpg",
+          "/demo/images/pic-15.jpg",
+          "/demo/images/pic-16.jpg"
+        ],
+        "viz": {
+          "kind": "timeline",
+          "label": "Text changes",
+          "points": [
+            {
+              "at": "Day 1",
+              "label": "Base text published"
+            },
+            {
+              "at": "Day 4",
+              "label": "Committee markup"
+            },
+            {
+              "at": "Day 9",
+              "label": "Carveout appears"
+            },
+            {
+              "at": "Day 13",
+              "label": "Floor manager's package"
+            }
+          ]
+        }
+      },
+      {
+        "id": "scene-4",
+        "kicker": "Narrative",
+        "headline": "The messaging lands: costs, shortages, jobs.",
+        "body": "The same frames show up across ads, op-eds, and testimony. This is the campaign, not the argument.",
+        "key_finding": {
+          "label": "Ad themes",
+          "value": "3",
+          "note": "Cost, access, jobs (seeded)."
+        },
+        "related_headline_ids": [
+          "n-047",
+          "n-052",
+          "n-057"
+        ],
+        "collage_image_urls": [
+          "/demo/images/pic-17.jpg",
+          "/demo/images/pic-18.jpg",
+          "/demo/images/pic-19.jpg",
+          "/demo/images/pic-20.jpg",
+          "/demo/images/pic-21.jpg"
+        ],
+        "viz": {
+          "kind": "graph",
+          "label": "Talking points network",
+          "nodes": [
+            {
+              "id": "Trade Group",
+              "type": "org"
+            },
+            {
+              "id": "Committee A",
+              "type": "committee"
+            },
+            {
+              "id": "Committee B",
+              "type": "committee"
+            },
+            {
+              "id": "PR Firm",
+              "type": "vendor"
+            }
+          ],
+          "links": [
+            {
+              "s": "Trade Group",
+              "t": "PR Firm",
+              "amount": 1
+            },
+            {
+              "s": "PR Firm",
+              "t": "Committee A",
+              "amount": 1
+            },
+            {
+              "s": "PR Firm",
+              "t": "Committee B",
+              "amount": 1
+            }
+          ]
+        }
+      },
+      {
+        "id": "scene-5",
+        "kicker": "Vote",
+        "headline": "The roll call is the receipt.",
+        "body": "When the vote happens, the question is not who won: it's who was paid to show up, and who went quiet.",
+        "key_finding": {
+          "label": "Swing votes (seeded)",
+          "value": "7",
+          "note": "Members with mixed signals over 60 days."
+        },
+        "related_headline_ids": [
+          "n-001",
+          "n-006",
+          "n-011"
+        ],
+        "collage_image_urls": [
+          "/demo/images/pic-22.jpg",
+          "/demo/images/pic-23.jpg",
+          "/demo/images/pic-24.jpg",
+          "/demo/images/pic-25.jpg",
+          "/demo/images/pic-26.jpg"
+        ],
+        "viz": {
+          "kind": "stat",
+          "label": "Swing votes",
+          "value": "7",
+          "note": "Seeded."
+        }
+      },
+      {
+        "id": "scene-6",
+        "kicker": "Aftermath",
+        "headline": "The new normal: reporting, loopholes, and round two.",
+        "body": "Even after passage, pressure campaigns shift to rulemaking and enforcement. The story doesn't end at the gavel.",
+        "key_finding": {
+          "label": "Next target",
+          "value": "Rulemaking",
+          "note": "Seeded narrative beat."
+        },
+        "related_headline_ids": [
+          "n-016",
+          "n-021",
+          "n-026"
+        ],
+        "collage_image_urls": [
+          "/demo/images/pic-27.jpg",
+          "/demo/images/pic-28.jpg",
+          "/demo/images/pic-29.jpg",
+          "/demo/images/pic-30.jpg",
+          "/demo/images/pic-01.jpg"
+        ],
+        "viz": {
+          "kind": "timeline",
+          "label": "What comes next",
+          "points": [
+            {
+              "at": "Week 1",
+              "label": "Guidance drafted"
+            },
+            {
+              "at": "Week 6",
+              "label": "Lobby day"
+            },
+            {
+              "at": "Week 10",
+              "label": "Final rule"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "tech-ai-regulation",
+    "title": "The Safety Bill Sprint",
+    "dek": "A noir look at how policy language evolves when the stakes are reputational and economic.",
+    "hero_image_url": "/demo/images/pic-09.jpg",
+    "tags": [
+      "AI Regulation",
+      "Tech",
+      "Seeded"
+    ],
+    "steps": [
+      {
+        "id": "step-1",
+        "kicker": "Case File 02",
+        "headline": "A crisis, a hearing, a draft.",
+        "body": "A public flashpoint triggers hearings. The first draft is broad. The second draft is… specific.",
+        "key_finding": {
+          "label": "Meetings logged (seeded)",
+          "value": "42",
+          "note": "Across two weeks."
+        },
+        "related_headline_ids": [
+          "n-005",
+          "n-010",
+          "n-015"
+        ],
+        "collage_image_urls": [
+          "/demo/images/pic-03.jpg",
+          "/demo/images/pic-08.jpg",
+          "/demo/images/pic-13.jpg",
+          "/demo/images/pic-18.jpg",
+          "/demo/images/pic-23.jpg"
+        ],
+        "viz": {
+          "kind": "stat",
+          "label": "Meetings",
+          "value": "42",
+          "note": "Seeded."
+        }
+      },
+      {
+        "id": "step-2",
+        "kicker": "Scope",
+        "headline": "Definitions do the real work.",
+        "body": "One adjective in a definition can move a compliance boundary from 'everyone' to 'almost nobody'.",
+        "key_finding": {
+          "label": "Key definition edits",
+          "value": "6",
+          "note": "Seeded count."
+        },
+        "related_headline_ids": [
+          "n-020",
+          "n-025",
+          "n-030"
+        ],
+        "collage_image_urls": [
+          "/demo/images/pic-04.jpg",
+          "/demo/images/pic-14.jpg",
+          "/demo/images/pic-24.jpg",
+          "/demo/images/pic-02.jpg",
+          "/demo/images/pic-12.jpg"
+        ],
+        "viz": {
+          "kind": "timeline",
+          "label": "Definition drift",
+          "points": [
+            {
+              "at": "Draft 1",
+              "label": "Broad coverage"
+            },
+            {
+              "at": "Draft 2",
+              "label": "Exceptions added"
+            },
+            {
+              "at": "Draft 3",
+              "label": "Thresholds raised"
+            }
+          ]
+        }
+      },
+      {
+        "id": "step-3",
+        "kicker": "Money",
+        "headline": "Trade associations carry the message.",
+        "body": "A handful of associations appear in every meeting schedule. It is coordination without a signature.",
+        "key_finding": {
+          "label": "Spend (seeded)",
+          "value": "$9.8M",
+          "note": "Industry-wide on a single issue label."
+        },
+        "related_headline_ids": [
+          "n-035",
+          "n-040",
+          "n-045"
+        ],
+        "collage_image_urls": [
+          "/demo/images/pic-05.jpg",
+          "/demo/images/pic-10.jpg",
+          "/demo/images/pic-15.jpg",
+          "/demo/images/pic-20.jpg",
+          "/demo/images/pic-25.jpg"
+        ],
+        "viz": {
+          "kind": "sankey",
+          "label": "Flow",
+          "from": "Associations",
+          "to": "Committee staff",
+          "amount": "$9.8M (seeded)"
+        }
+      },
+      {
+        "id": "step-4",
+        "kicker": "Pressure",
+        "headline": "The lobbying pitch: safety, competitiveness, jobs.",
+        "body": "A stable triad: protect users, protect innovation, protect domestic advantage. Same words, everywhere.",
+        "key_finding": {
+          "label": "Pitch themes",
+          "value": "3",
+          "note": "Seeded."
+        },
+        "related_headline_ids": [
+          "n-050",
+          "n-055",
+          "n-060"
+        ],
+        "collage_image_urls": [
+          "/demo/images/pic-06.jpg",
+          "/demo/images/pic-11.jpg",
+          "/demo/images/pic-16.jpg",
+          "/demo/images/pic-21.jpg",
+          "/demo/images/pic-26.jpg"
+        ],
+        "viz": {
+          "kind": "graph",
+          "label": "Message graph",
+          "nodes": [
+            {
+              "id": "Safety",
+              "type": "theme"
+            },
+            {
+              "id": "Innovation",
+              "type": "theme"
+            },
+            {
+              "id": "Jobs",
+              "type": "theme"
+            }
+          ],
+          "links": [
+            {
+              "s": "Safety",
+              "t": "Innovation"
+            },
+            {
+              "s": "Innovation",
+              "t": "Jobs"
+            }
+          ]
+        }
+      },
+      {
+        "id": "step-5",
+        "kicker": "Markup",
+        "headline": "A quiet carveout becomes a loud fight.",
+        "body": "Once a carveout is spotted, the coalition fractures: some want it hidden, others want it codified.",
+        "key_finding": {
+          "label": "Carveout size (seeded)",
+          "value": "18%",
+          "note": "Share of covered systems exempted."
+        },
+        "related_headline_ids": [
+          "n-009",
+          "n-014",
+          "n-019"
+        ],
+        "collage_image_urls": [
+          "/demo/images/pic-07.jpg",
+          "/demo/images/pic-17.jpg",
+          "/demo/images/pic-27.jpg",
+          "/demo/images/pic-01.jpg",
+          "/demo/images/pic-22.jpg"
+        ],
+        "viz": {
+          "kind": "stat",
+          "label": "Exempted",
+          "value": "18%",
+          "note": "Seeded."
+        }
+      },
+      {
+        "id": "step-6",
+        "kicker": "Outcome",
+        "headline": "The bill passes. The rules begin.",
+        "body": "The next battle is implementation: standards, audits, and who gets to define 'reasonable'.",
+        "key_finding": {
+          "label": "Next arena",
+          "value": "Standards bodies",
+          "note": "Seeded narrative beat."
+        },
+        "related_headline_ids": [
+          "n-024",
+          "n-029",
+          "n-034"
+        ],
+        "collage_image_urls": [
+          "/demo/images/pic-28.jpg",
+          "/demo/images/pic-29.jpg",
+          "/demo/images/pic-30.jpg",
+          "/demo/images/pic-02.jpg",
+          "/demo/images/pic-03.jpg"
+        ],
+        "viz": {
+          "kind": "timeline",
+          "label": "Implementation",
+          "points": [
+            {
+              "at": "Month 1",
+              "label": "Draft standards"
+            },
+            {
+              "at": "Month 3",
+              "label": "Public comment"
+            },
+            {
+              "at": "Month 6",
+              "label": "Audit pilots"
+            }
+          ]
+        }
+      }
+    ]
+  }
+]

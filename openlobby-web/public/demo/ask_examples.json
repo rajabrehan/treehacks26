@@ -1,0 +1,67 @@
+[
+  {
+    "question": "Which actors pushed hardest on the AI safety bill?",
+    "answer": "In this demo dataset, major platforms and trade groups cluster around committee staff meetings during the draft period, with repeated messaging themes (safety, competitiveness, jobs).",
+    "sources": [
+      {
+        "title": "Draft AI safety bill draws late lobbying surge from top platforms (AI Regulation)",
+        "url": "https://example.com/demo/n-005",
+        "quote": "Coordinated pressure campaigns targeting key committees."
+      },
+      {
+        "title": "Draft AI safety bill draws late lobbying surge from top platforms (AI Regulation)",
+        "url": "https://example.com/demo/n-010",
+        "quote": "Definitions do the real work."
+      }
+    ]
+  },
+  {
+    "question": "How does money concentrate around a drug pricing vote?",
+    "answer": "The seeded case file shows contributions clustering in a narrow window around committee activity, followed by coordinated messaging and amendment churn.",
+    "sources": [
+      {
+        "title": "Energy firms intensify Hill push as emissions deadline nears (Climate & Energy)",
+        "url": "https://example.com/demo/n-002",
+        "quote": "Trade groups publish identical talking points."
+      },
+      {
+        "title": "Energy firms intensify Hill push as emissions deadline nears (Climate & Energy)",
+        "url": "https://example.com/demo/n-017",
+        "quote": "Checks cluster around the same offices."
+      }
+    ]
+  },
+  {
+    "question": "Show me a quick map of influence for a single issue.",
+    "answer": "In demo mode, the landing page 'Case Files' scrollytelling drives a mini graph preview that changes on scroll. The full build would expand nodes via /api/graph.",
+    "sources": [
+      {
+        "title": "Energy firms intensify Hill push as emissions deadline nears (Climate & Energy)",
+        "url": "https://example.com/demo/n-032",
+        "quote": "A few lines can change who pays."
+      }
+    ]
+  },
+  {
+    "question": "Is this real data?",
+    "answer": "Demo mode is seeded for storytelling. The production pipeline would ingest from FEC, Senate LDA, SEC EDGAR, and curated news sources, then index Elasticsearch as a derived store.",
+    "sources": [
+      {
+        "title": "Demo Mode policy",
+        "url": "https://example.com/demo/policy",
+        "quote": "Seeded demo content."
+      }
+    ]
+  },
+  {
+    "question": "What should I click first?",
+    "answer": "Start with a Case File, then click a headline to open the article card, and finally jump to Explore to see the graph view.",
+    "sources": [
+      {
+        "title": "New drug pricing amendment triggers industry ad blitz in swing districts (Drug Pricing)",
+        "url": "https://example.com/demo/n-001",
+        "quote": "The roll call is the receipt."
+      }
+    ]
+  }
+]
