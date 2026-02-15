@@ -5,7 +5,7 @@
 **Corporate Influence Tracker**
 **Comprehensive Hackathon Build Specification**
 **Version 1.0**  |  **February 2026**  |  **Hackathon Ready**
-**Stack:** BrightData + JINA + Elasticsearch + Modal + Vercel + Cloudflare + Render
+**Stack:** BrightData + JINA + Supabase (Postgres + Auth) + Elasticsearch + Modal + Vercel + Cloudflare + Render
 
 ## Table of Contents
 
@@ -13,7 +13,7 @@
 2. Architecture Overview & System Diagram
 3. Data Sources & Ingestion Pipeline
 4. Backend Services (Render + Cloudflare Workers)
-5. Elasticsearch Schema & Semantic Search
+5. Data Storage: Supabase (Primary) + Elasticsearch (Search/Vector)
 6. Modal GPU Service (LLM Entity Extraction & QA)
 7. Frontend (Vercel + Next.js)
 8. LLM Prompts (XML-Structured, Production-Grade)
@@ -21,7 +21,7 @@
 10. Database Seeding & Demo Data Strategy
 11. Hackathon Timeline (24-Hour Sprint Plan)
 12. Prize Alignment Matrix
-13. Appendix: Environment Variables & API Keys
+13. Appendix: Environment Variables
 
 ---
 
@@ -53,23 +53,24 @@ OpenLobby unifies all of this data into a single, semantically searchable platfo
 ### 2.1 System Diagram (ASCII)
 
 ```text
-+------------------+     +-------------------+     +------------------+
-| DATA SOURCES     |     | INGESTION LAYER   |     | STORAGE          |
-| - FEC API        | --> | BrightData        | --> | Elasticsearch    |
-| - Senate Lobby   |     | Scraper +         |     | (Elastic Cloud)  |
-| - OpenSecrets    |     | Cloudflare Worker |     |                  |
-|   Bulk CSV       |     | (ETL Scheduler)   |     | + JINA Embeddings|
-| - SEC EDGAR      |     +-------------------+     +--------+---------+
-| - News (RSS)     |                                        |
-+------------------+                                        v
-                                                   +------------------+
-+------------------+     +-------------------+     | QUERY LAYER      |
-| FRONTEND         |     | BACKEND API       |     | Modal (GPU)      |
-| Vercel (Next.js) | <-- | Render (FastAPI)  | <-- | - Entity Extract |
-| - Graph Viz      |     | - REST endpoints  |     | - NL Question    |
-| - Search UI      |     | - Auth / Rate Lim |     |   Answering      |
-| - Dashboard      |     | - Cache (Redis)   |     | - Summarization  |
-+------------------+     +-------------------+     +------------------+
++------------------+     +-------------------+     +----------------------+
+| DATA SOURCES     | --> | INGESTION LAYER   | --> | Supabase Postgres     |
+| - FEC API        |     | BrightData +      |     | (source of truth)     |
+| - Senate Lobby   |     | Cloudflare Worker |     +----------+-----------+
+| - OpenSecrets    |     | (ETL Scheduler)   |                |
+| - SEC EDGAR      |     +-------------------+                v
+| - News (RSS)     |                             +----------------------+
++------------------+                             | Elasticsearch         |
+                                                 | (derived search/index)|
+                                                 +----------+-----------+
+                                                            |
++------------------+     +-------------------+               v      +------------------+
+| FRONTEND         | <-- | BACKEND API       | <-------------------- | Modal (GPU)      |
+| Vercel (Next.js) |     | Render (FastAPI)  |                       | LLM tasks        |
+| - Supabase Auth  |     | - verifies JWT    |                       +------------------+
+| - Search UI      |     | - reads Supabase  |
+| - Dashboard      |     | - queries Elastic |
++------------------+     +-------------------+
 ```
 
 ### 2.2 Component Responsibilities
@@ -77,11 +78,13 @@ OpenLobby unifies all of this data into a single, semantically searchable platfo
 | Component        | Technology                         | Role                                                                                                                               |
 | ---------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | Data Ingestion   | BrightData Web Scraper API         | Scrape OpenSecrets pages, Senate lobbying disclosures, news articles. Handle anti-bot, proxies, JS rendering automatically.        |
-| ETL / Scheduling | Cloudflare Workers + Cron Triggers | Scheduled data pipelines that transform raw scraped data into structured entities, trigger BrightData jobs, push to Elasticsearch. |
-| Vector Storage   | Elasticsearch (Elastic Cloud)      | Store all entities (politicians, companies, PACs, lobbyists, votes, donations) with JINA vector embeddings for semantic search.    |
+| ETL / Scheduling | Cloudflare Workers + Cron Triggers | Scheduled data pipelines that transform raw scraped data into structured entities, trigger BrightData jobs, and upsert into Supabase + index Elasticsearch. |
+| Primary DB       | Supabase (Postgres)                | Source-of-truth for all structured data: entities, relationships, raw docs, and all user data (saved items, notes, reports).       |
+| Auth             | Supabase Auth (Google OAuth)       | User signup/login via Google. Frontend obtains Supabase session; backend verifies Supabase JWT for user endpoints.                 |
+| Search/Vector    | Elasticsearch (Elastic Cloud)      | Rebuildable derived index for hybrid search (BM25 + kNN) and fast retrieval. Stores embeddings + denormalized fields for ranking.  |
 | Embeddings       | JINA Embeddings v3 API             | Generate 1024-dim embeddings for all text content. Supports task-specific adapters (retrieval, classification).                    |
 | LLM Processing   | Modal (serverless GPU)             | Run open-source LLMs (Mistral/Llama) for entity extraction from raw text, natural language question answering, and summarization.  |
-| Backend API      | Render (FastAPI/Python)            | REST API serving the frontend. Handles auth, rate limiting, query routing, caching with Redis.                                     |
+| Backend API      | Render (FastAPI/Python)            | REST API serving the frontend. Uses Supabase Postgres for canonical reads/writes, verifies Supabase Auth, queries Elasticsearch.    |
 | Frontend         | Vercel (Next.js 14 + React)        | Interactive UI with search bar, knowledge graph visualization (D3.js/react-force-graph), dashboards, and shareable reports.        |
 
 ---
@@ -171,8 +174,9 @@ def get_committee_summary(committee_id: str):
 2. Worker dispatches BrightData scrape jobs for new lobbying filings and news
 3. BrightData webhook delivers results to Render backend endpoint `/api/ingest/webhook`
 4. Backend parses raw HTML/JSON, calls Modal for entity extraction (NER on raw text)
-5. Extracted entities + relationships get JINA embeddings generated
-6. Everything indexed into Elasticsearch with vectors
+5. Extracted entities + relationships are upserted into **Supabase Postgres** (canonical store)
+6. Text fields get JINA embeddings generated
+7. Derived search documents are indexed into Elasticsearch (rebuildable from Supabase)
 
 ---
 
@@ -192,12 +196,15 @@ openlobby-api/
       graph.py           # /api/graph - relationship graph data
       ingest.py          # /api/ingest - webhook + manual triggers
       ask.py             # /api/ask - natural language Q&A
+      user.py            # /api/user/* - saved queries, bookmarks, notes (requires Supabase JWT)
     services/
       elasticsearch.py   # ES client + query builders
       jina.py            # JINA embedding generation
       modal_client.py    # Call Modal for LLM tasks
       fec.py             # FEC API client
       brightdata.py      # BrightData trigger client
+      supabase.py        # Supabase client (service role) + DB helpers
+      auth.py            # Verify Supabase JWT (Authorization: Bearer <access_token>)
     models/
       entities.py        # Pydantic models for Politician, Company, etc.
       relationships.py   # Donation, Lobbying, Vote models
@@ -211,7 +218,7 @@ openlobby-api/
 ```python
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import search, entities, graph, ingest, ask
+from app.routers import search, entities, graph, ingest, ask, user
 
 app = FastAPI(title='OpenLobby API', version='1.0.0')
 
@@ -227,6 +234,7 @@ app.include_router(entities.router, prefix='/api/entities', tags=['entities'])
 app.include_router(graph.router, prefix='/api/graph', tags=['graph'])
 app.include_router(ingest.router, prefix='/api/ingest', tags=['ingest'])
 app.include_router(ask.router, prefix='/api/ask', tags=['ask'])
+app.include_router(user.router, prefix='/api/user', tags=['user'])
 ```
 
 #### Key Endpoint: `/api/search` (`search.py`)
@@ -254,6 +262,8 @@ async def search(
         entity_type=entity_type,
         limit=limit
     )
+    # NOTE: Elasticsearch is a derived index. For canonical fields (and any writes),
+    # read/write Supabase Postgres. Optionally hydrate results by id from Supabase here.
     return {'results': results, 'query': q}
 ```
 
@@ -341,9 +351,114 @@ RENDER_API_URL = 'https://openlobby-api.onrender.com'
 
 ---
 
-## 5. Elasticsearch Schema & Semantic Search
+## 5. Data Storage: Supabase (Primary) + Elasticsearch (Search/Vector)
 
-### 5.1 Index Design
+### 5.1 Supabase: Database + Auth
+
+Supabase is the **source-of-truth** for all structured data and all user data. Elasticsearch is a derived index that can be rebuilt from Supabase at any time.
+
+#### 5.1.1 Auth (Google OAuth)
+
+- Use **Supabase Auth** for login.
+- Frontend uses `signInWithOAuth({ provider: 'google' })`.
+- Frontend sends `Authorization: Bearer <supabase_access_token>` to backend for any user-scoped endpoints.
+- Backend verifies Supabase JWT and enforces access control server-side for `/api/user/*`.
+- Use `SUPABASE_SERVICE_ROLE_KEY` only on the server (ingest/index/seed). Never expose it to the client.
+
+Supabase Dashboard setup:
+
+- Authentication -> Providers -> enable **Google**
+- Add redirect URLs:
+  - `http://localhost:3000/auth/callback`
+  - `https://<your-vercel-domain>/auth/callback`
+
+#### 5.1.2 Core Tables (Canonical Data)
+
+Minimal schema (SQL) for hackathon:
+
+```sql
+-- Canonical entities
+create table if not exists public.entities (
+  id text primary key,
+  type text not null check (type in ('politician','company','pac','lobbyist','bill','document')),
+  name text not null,
+  description text,
+  party text,
+  state text,
+  industry text,
+  total_lobbying numeric,
+  total_donations numeric,
+  metadata jsonb not null default '{}'::jsonb,
+  last_updated timestamptz not null default now()
+);
+
+-- Canonical relationships
+create table if not exists public.relationships (
+  id text primary key,
+  type text not null check (type in ('donation','lobbying','vote','employment')),
+  source_id text not null references public.entities(id) on delete cascade,
+  target_id text not null references public.entities(id) on delete cascade,
+  amount numeric,
+  date date,
+  cycle text,
+  description text,
+  metadata jsonb not null default '{}'::jsonb,
+  last_updated timestamptz not null default now()
+);
+
+create index if not exists relationships_source_id_idx on public.relationships(source_id);
+create index if not exists relationships_target_id_idx on public.relationships(target_id);
+create index if not exists entities_type_idx on public.entities(type);
+```
+
+#### 5.1.3 User Data Tables (Supabase Auth + RLS)
+
+User data lives in Supabase with Row Level Security (RLS) so users can only read/write their own rows.
+
+```sql
+create table if not exists public.profiles (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  full_name text,
+  avatar_url text,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.saved_queries (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  query text not null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.bookmarks (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  entity_id text not null references public.entities(id) on delete cascade,
+  note text,
+  created_at timestamptz not null default now(),
+  unique (user_id, entity_id)
+);
+
+alter table public.profiles enable row level security;
+alter table public.saved_queries enable row level security;
+alter table public.bookmarks enable row level security;
+
+-- RLS policies (owner-only)
+create policy "profiles_owner_read" on public.profiles
+  for select using (auth.uid() = user_id);
+create policy "profiles_owner_write" on public.profiles
+  for insert with check (auth.uid() = user_id);
+create policy "profiles_owner_update" on public.profiles
+  for update using (auth.uid() = user_id);
+
+create policy "saved_queries_owner" on public.saved_queries
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create policy "bookmarks_owner" on public.bookmarks
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+```
+
+### 5.2 Elasticsearch Index Design (Derived)
 
 We use a unified index with entity types discriminated by a `type` field. Each entity stores both structured data and a JINA embedding vector for semantic search.
 
@@ -404,7 +519,7 @@ PUT /openlobby-relationships
 }
 ```
 
-### 5.2 Hybrid Search Implementation
+### 5.3 Hybrid Search Implementation
 
 **`elasticsearch.py`**
 
@@ -441,7 +556,7 @@ async def semantic_search(query_text, query_vector, entity_type=None, limit=20):
     return [hit['_source'] for hit in resp['hits']['hits']]
 ```
 
-### 5.3 JINA Embedding Generation
+### 5.4 JINA Embedding Generation
 
 **`jina.py`**
 
@@ -587,14 +702,17 @@ modal serve modal_app.py
 
 ```text
 openlobby-web/
-  app/
-    layout.tsx           # Root layout with nav, fonts, theme
-    page.tsx             # Landing page with hero search
-    search/
-      page.tsx           # Search results page
-    entity/
-      [id]/
-        page.tsx         # Entity detail page (politician/company)
+	  app/
+	    layout.tsx           # Root layout with nav, fonts, theme
+	    page.tsx             # Landing page with hero search
+	    auth/
+	      callback/
+	        page.tsx         # Supabase OAuth callback (set session, redirect)
+	    search/
+	      page.tsx           # Search results page
+	    entity/
+	      [id]/
+	        page.tsx         # Entity detail page (politician/company)
     explore/
       page.tsx           # Interactive graph explorer
     ask/
@@ -607,9 +725,10 @@ openlobby-web/
     DonationTimeline.tsx # Timeline chart of contributions
     VoteRecord.tsx       # Voting record visualization
     SentimentBadge.tsx   # News sentiment indicator
-  lib/
-    api.ts               # API client for Render backend
-    types.ts             # TypeScript types
+	  lib/
+	    api.ts               # API client for Render backend
+	    supabase.ts          # Supabase client (Auth)
+	    types.ts             # TypeScript types
   public/
   tailwind.config.ts
   next.config.js
@@ -683,7 +802,33 @@ Full-screen interactive force-directed graph built with `react-force-graph-3d`.
 
 This is the “wow factor” page for the hackathon demo.
 
-### 7.3 Core Component: `NetworkGraph.tsx`
+### 7.3 Auth: Supabase (Google OAuth)
+
+- Add `@supabase/supabase-js` to the Next.js app.
+- Implement Google login with Supabase Auth.
+- After login, send `Authorization: Bearer <access_token>` to backend for `/api/user/*` endpoints (saved queries, bookmarks, notes).
+
+Example client setup:
+
+```ts
+import { createClient } from '@supabase/supabase-js';
+
+export const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+```
+
+Example Google sign-in:
+
+```ts
+await supabase.auth.signInWithOAuth({
+  provider: 'google',
+  options: { redirectTo: `${window.location.origin}/auth/callback` },
+});
+```
+
+### 7.4 Core Component: `NetworkGraph.tsx`
 
 ```tsx
 'use client';
@@ -974,6 +1119,7 @@ Output ONLY the XML, nothing else.
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
 | Vercel             | Sign up at `vercel.com`. Connect GitHub repo. Import Next.js project.                                                                                 | Free: 100GB bandwidth, serverless functions   |
 | Render             | Sign up at `render.com`. Create new Web Service from GitHub. Set to Python runtime, start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT` | Free: 750hrs/mo (spins down after inactivity) |
+| Supabase           | Create project. Enable Google OAuth provider. Add redirect URLs. Create tables + RLS policies (Section 5.1).                                           | Free tier: generous for hackathon use         |
 | Cloudflare Workers | Sign up at `dash.cloudflare.com`. Install Wrangler CLI: `npm i -g wrangler`. Run `wrangler login`.                                                    | Free: 100K requests/day, 10ms CPU time        |
 | Elastic Cloud      | Sign up at `cloud.elastic.co`. Create deployment (select closest region). Copy Cloud ID and create API key.                                           | 14-day free trial, then ~$95/mo for basic     |
 | JINA AI            | Go to `jina.ai`, create account, get API key. Free tier includes 1M tokens.                                                                           | Free: 1M tokens. Paid: from $0.02/1M tokens   |
@@ -994,6 +1140,12 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
       - key: ELASTIC_CLOUD_ID
         sync: false
       - key: ELASTIC_API_KEY
@@ -1017,6 +1169,8 @@ services:
 ```text
 fastapi==0.115.0
 uvicorn[standard]==0.30.0
+supabase
+python-jose[cryptography]
 elasticsearch[async]==8.15.0
 httpx==0.27.0
 pydantic==2.9.0
@@ -1063,7 +1217,7 @@ wrangler dev --test-scheduled
 #    Role: superuser (for hackathon; scope down for prod)
 
 # 3. Create indices via Kibana Dev Tools:
-#    Paste the index mappings from Section 5.1
+#    Paste the index mappings from Section 5.2
 
 # 4. Verify connection:
 curl -H 'Authorization: ApiKey YOUR_API_KEY' \
@@ -1090,10 +1244,11 @@ For the hackathon demo, we need compelling data that tells a clear story. Rather
 **`seed_demo_data.py`**
 
 ```python
-"""Seed Elasticsearch with curated demo data."""
+"""Seed Supabase (canonical) and then index Elasticsearch (derived)."""
 import asyncio
 from app.services.elasticsearch import es
 from app.services.jina import get_embeddings_batch
+from app.services.supabase import supabase_admin
 
 DEMO_ENTITIES = [
     {'id': 'pfizer', 'type': 'company', 'name': 'Pfizer Inc.',
@@ -1107,13 +1262,16 @@ DEMO_ENTITIES = [
 
 DEMO_RELATIONSHIPS = [
     {'id': 'rel-001', 'type': 'donation', 'source_id': 'pfizer-pac',
-     'target_id': 'sen-smith', 'source_name': 'Pfizer PAC',
-     'target_name': 'Sen. Example', 'amount': 45000, 'cycle': '2024',
+     'target_id': 'sen-smith', 'amount': 45000, 'cycle': '2024',
      'description': 'Pfizer PAC contributed $45,000 to Sen. Example campaign'},
     # ... more relationships
 ]
 
 async def seed():
+    # 1) Canonical writes go to Supabase
+    supabase_admin.table('entities').upsert(DEMO_ENTITIES).execute()
+    supabase_admin.table('relationships').upsert(DEMO_RELATIONSHIPS).execute()
+
     # Generate embeddings for all entities
     texts = [f"{e['name']}: {e['description']}" for e in DEMO_ENTITIES]
     embeddings = await get_embeddings_batch(texts)
@@ -1127,8 +1285,8 @@ async def seed():
     rel_embeddings = await get_embeddings_batch(rel_texts)
     
     for rel, emb in zip(DEMO_RELATIONSHIPS, rel_embeddings):
-        rel['embedding'] = emb
-        await es.index(index='openlobby-relationships', id=rel['id'], body=rel)
+        es_doc = {**rel, 'embedding': emb}
+        await es.index(index='openlobby-relationships', id=rel['id'], body=es_doc)
 
 asyncio.run(seed())
 ```
@@ -1139,14 +1297,14 @@ asyncio.run(seed())
 
 | Hours | Phase           | Tasks                                                                                                                                             | Owner(s)     |
 | ----- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
-| 0–2   | SETUP           | Create all accounts (Vercel, Render, Elastic, JINA, Modal, Cloudflare, BrightData, FEC). Initialize repos. Set up env vars. Deploy skeleton apps. | Full Team    |
-| 2–4   | DATA LAYER      | Create Elasticsearch indices. Write JINA embedding service. Build `seed_demo_data.py` with 20–30 curated entities. Test hybrid search.            | Backend Dev  |
+| 0–2   | SETUP           | Create all accounts (Vercel, Render, Supabase, Elastic, JINA, Modal, Cloudflare, BrightData, FEC). Enable Supabase Auth (Google) + redirects.    | Full Team    |
+| 2–4   | DATA LAYER      | Create Supabase schema + RLS. Seed 20–30 curated entities/relationships into Supabase. Create Elasticsearch indices (derived) + test hybrid search.| Backend Dev  |
 | 2–4   | FRONTEND SHELL  | Next.js project setup. Tailwind config. Build layout, nav, SearchBar component. Deploy to Vercel.                                                 | Frontend Dev |
 | 4–6   | MODAL LLM       | Write Modal app with vLLM. Test entity extraction prompt. Test QA prompt. Deploy to Modal.                                                        | ML Dev       |
 | 4–6   | BRIGHTDATA      | Configure BrightData scrapers for OpenSecrets + news. Write Cloudflare Worker ETL. Test webhook flow.                                             | Backend Dev  |
 | 6–10  | CORE FEATURES   | Wire up `/api/search`, `/api/ask`, `/api/graph` endpoints. Connect frontend to API. Build search results page + entity detail page.               | Full Team    |
 | 10–14 | GRAPH VIZ       | Build NetworkGraph component with react-force-graph. Create MoneyFlow Sankey diagram. Style entity detail tabs.                                   | Frontend Dev |
-| 10–14 | INGEST PIPELINE | End-to-end: BrightData scrape → Modal extract → JINA embed → Elasticsearch index. Test with real data.                                            | Backend Dev  |
+| 10–14 | INGEST PIPELINE | End-to-end: BrightData scrape → Modal extract → upsert Supabase → JINA embed → Elasticsearch (derived) index. Test with real data.               | Backend Dev  |
 | 14–18 | POLISH          | Responsive design. Loading states. Error handling. More demo data. Test all user flows.                                                           | Full Team    |
 | 18–22 | DEMO PREP       | Record demo video. Write README. Prepare live demo script. Stress test.                                                                           | Full Team    |
 | 22–24 | SUBMIT          | Final deploy. Submit to hackathon. Double-check all prize criteria.                                                                               | Full Team    |
@@ -1169,6 +1327,11 @@ asyncio.run(seed())
 ### 13.1 Render Backend (`.env`)
 
 ```bash
+# Supabase (Primary DB + Auth verification)
+SUPABASE_URL=https://xxxxxxxxxxxxxxxx.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+SUPABASE_JWT_SECRET=your_jwt_secret
+
 # Elasticsearch
 ELASTIC_CLOUD_ID=openlobby:dXMtY2VudHJhbDEuZ2...
 ELASTIC_API_KEY=base64encodedkey...
@@ -1197,6 +1360,10 @@ INGEST_SECRET=random_generated_secret
 
 ```bash
 NEXT_PUBLIC_API_URL=https://openlobby-api.onrender.com
+
+# Supabase Auth (Google OAuth)
+NEXT_PUBLIC_SUPABASE_URL=https://xxxxxxxxxxxxxxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 ```
 
 ### 13.3 Cloudflare Worker (wrangler secrets)
