@@ -218,7 +218,7 @@ openlobby-api/
 ```python
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import search, entities, graph, ingest, ask, user
+from app.routers import search, entities, graph, ingest, ask, user, news, cases
 
 app = FastAPI(title='OpenLobby API', version='1.0.0')
 
@@ -235,6 +235,8 @@ app.include_router(graph.router, prefix='/api/graph', tags=['graph'])
 app.include_router(ingest.router, prefix='/api/ingest', tags=['ingest'])
 app.include_router(ask.router, prefix='/api/ask', tags=['ask'])
 app.include_router(user.router, prefix='/api/user', tags=['user'])
+app.include_router(news.router, prefix='/api/news', tags=['news'])
+app.include_router(cases.router, prefix='/api/cases', tags=['cases'])
 ```
 
 #### Key Endpoint: `/api/search` (`search.py`)
@@ -290,6 +292,17 @@ async def ask_question(request: AskRequest):
     
     return {'answer': answer, 'sources': context_docs}
 ```
+
+#### Landing Support Endpoints: News + Case Files
+
+These endpoints power the Noir Newsroom landing experience. In demo mode (Section 7.2.2), the frontend reads local JSON; in full mode, the backend serves records from Supabase (canonical) and optionally indexes into Elasticsearch (derived).
+
+- `GET /api/news/top?limit=50`
+  - Returns headline cards: `[{ id, title, url, source, published_at, excerpt, image_url, entities_mentioned[] }]`
+- `GET /api/cases`
+  - Returns case file metadata (no steps): `[{ id, title, dek, hero_image_url, tags[] }]`
+- `GET /api/cases/{id}`
+  - Returns full case file, including `steps[]` consumed by the landing `ScrollStory`
 
 ### 4.2 Cloudflare Workers: ETL Scheduler
 
@@ -456,6 +469,41 @@ create policy "saved_queries_owner" on public.saved_queries
 
 create policy "bookmarks_owner" on public.bookmarks
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+```
+
+#### 5.1.4 News Documents + Case Files (Canonical, Later)
+
+For the hackathon UI, landing-page “news” and “case files” are seeded from local JSON in demo mode (Section 7.2.2). For the full stack, store canonical records in Supabase and treat Elasticsearch as a derived index.
+
+```sql
+-- Canonical news / source documents (articles, filings summaries, etc.)
+create table if not exists public.documents (
+  id uuid primary key default gen_random_uuid(),
+  source text not null, -- e.g. 'rss', 'sec_edgar', 'fec', 'lda_senate', 'manual'
+  url text,
+  title text not null,
+  published_at timestamptz,
+  excerpt text,
+  image_url text,
+  entities_mentioned text[] not null default '{}'::text[],
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create unique index if not exists documents_url_unique_idx on public.documents(url) where url is not null;
+create index if not exists documents_published_at_idx on public.documents(published_at desc);
+
+-- Curated narratives used for the landing scrollytelling experience
+create table if not exists public.case_files (
+  id text primary key, -- stable slug, e.g. 'pharma-drug-pricing'
+  title text not null,
+  dek text, -- short subtitle
+  hero_image_url text,
+  tags text[] not null default '{}'::text[],
+  steps jsonb not null, -- ordered array of step objects consumed by the ScrollStory UI
+  entities_featured text[] not null default '{}'::text[],
+  updated_at timestamptz not null default now()
+);
 ```
 
 ### 5.2 Elasticsearch Index Design (Derived)
@@ -737,22 +785,106 @@ openlobby-web/
 
 ### 7.2 Key Pages
 
-#### Landing Page (`app/page.tsx`) — Design Direction
+#### 7.2.1 Landing Page (`app/page.tsx`) — Noir Newsroom (Scrollytelling)
 
-Dark, editorial aesthetic. Think: Bloomberg Terminal meets ProPublica investigation. Black background (`#0D1B2A`), sharp red accent (`#E63946`), monospace typography for data, serif for headlines.
+The landing page is a longform investigation that materially changes as the user scrolls.
 
-* Hero section: single large search bar centered on screen with prompt:
-  **“Search any company, politician, or ask a question…”**
-* Below it, animated example queries cycle:
+**Design system (tokens)**
 
-  * “Which pharma companies influenced drug pricing votes?”
-  * “Show me ExxonMobil’s lobbying network”
-  * “Who funds Senator [X]?”
-* Below the hero: three feature cards showing recent revelations auto-generated from the data:
+Typography (Google Fonts recommended):
 
-  * “$12M spent by tech on AI regulation lobbying this quarter”
+- Headlines: `Instrument Serif` (fallback `Georgia, serif`)
+- Data/labels: `Fragment Mono` (fallback `ui-monospace, SFMono-Regular, Menlo, monospace`)
+- Body: `Source Serif 4` (fallback `serif`)
 
-#### Search Results Page (`app/search/page.tsx`)
+Color tokens (CSS variables and mirrored into Tailwind theme):
+
+- `--ink-0: #F4F0E8` (paper)
+- `--ink-900: #070A0F` (near-black)
+- `--steel: #9AA4B2` (secondary)
+- `--blood: #E03A3E` (accent)
+- `--copper: #C47F3A` (secondary accent)
+- `--fog: rgba(244,240,232,0.08)` (borders)
+
+Background treatment:
+
+- Gradient mesh + subtle noise overlay (CSS-only, no image dependency)
+- Photo mosaic uses a duotone/grain treatment (blend modes + contrast) so all photos feel cohesive
+
+**Layout (desktop)**
+
+1. Top bar: compact wordmark left, nav center/right (`Explore`, `Ask`, `About data`), `Sign in` on the far right.
+2. Hero (full viewport height):
+   - Primary element: giant search bar with three modes: `Search entities` | `Ask a question` | `Explore a case`
+   - Under the search bar: *clickable example chips* (preloaded)
+   - Right side (or behind): animated photo mosaic (collage grid) with duotone/grain
+3. “Live Wire” strip:
+   - Horizontal headline ticker (auto-scroll, pauses on hover/touch-hold)
+   - Clicking a headline opens an in-app article card (title, excerpt, source, published_at, link out)
+4. “Case Files” scrollytelling:
+   - Two-column story
+   - Left: sticky “viz stage” that morphs per scroll step
+   - Right: narrative cards rail; each card activates a step
+5. “Proof Shelf”:
+   - Source tiles (FEC, Senate LDA, EDGAR, ProPublica, News) describing provenance/limitations
+6. Final CTA:
+   - `Open the graph` (to `/explore`)
+   - `Save this investigation` (bookmark; in demo mode local-only)
+
+**Interaction spec (scroll-driven changes)**
+
+Implement a `ScrollStory` component:
+
+- Sticky viz panel: `position: sticky; top: <header_height + 16px>`
+- Step activation: `IntersectionObserver` (or `framer-motion` `useInView`) sets `activeStepId`
+- Each step swaps at least:
+  - Headline cluster (3–6 linked headlines relevant to the step)
+  - Collage arrangement (different subset/order of images)
+  - Mini visualization (Sankey preview, timeline, graph preview)
+  - “Key finding” stat block (big number + one sentence)
+- Story rail uses scroll snap: `scroll-snap-type: y mandatory` (and each card is `scroll-snap-align: start`)
+
+Optional URL state:
+
+- Update querystring without navigation: `?case=<id>&step=<stepId>` when steps change
+
+**Preloaded clickable examples (hard requirement)**
+
+Homepage shows *at least 12* example actions without typing:
+
+- 6 search examples (entity-focused) -> `/search?q=...`
+- 4 ask examples (question-focused) -> `/ask?q=...`
+- 2 case files -> `/explore?case=...` (or scroll into “Case Files” and select)
+
+**Seeded content requirements (demo mode hard requirements)**
+
+- 60+ seeded headlines renderable (ticker + “more headlines” grid)
+- 30+ locally stored images (collage + per-case hero images)
+
+Mobile behavior:
+
+- Single column layout
+- “Viz stage” becomes an inline panel inserted between cards (sticky disabled)
+
+#### 7.2.2 Demo Mode (Seeded Data, No Infra Required)
+
+Demo mode guarantees the landing page is impressive on first run without any deployed backend or external services.
+
+When `NEXT_PUBLIC_DEMO_MODE=1`:
+
+- Landing reads:
+  - `public/demo/news.json` (headlines)
+  - `public/demo/cases.json` (case files + scrollytelling steps)
+  - `public/demo/images/*` (local images for collage and case heroes)
+- Search and Ask pages:
+  - Prefer seeded responses: `public/demo/search_results.json` and `public/demo/ask_examples.json`
+  - Call the backend only if `NEXT_PUBLIC_API_URL` is set
+
+Demo content policy:
+
+- In demo mode, headlines can be curated or fictionalized; production mode should link out to sources and avoid republishing full article text.
+
+#### 7.2.3 Search Results Page (`app/search/page.tsx`)
 
 * Left sidebar facet filters: entity type, industry, state, date range, amount range
 * Main content shows entity cards ranked by relevance
@@ -764,7 +896,7 @@ Dark, editorial aesthetic. Think: Bloomberg Terminal meets ProPublica investigat
   * mini-graph preview of top 3 connections
 * Clicking opens entity detail page
 
-#### Entity Detail Page (`app/entity/[id]/page.tsx`)
+#### 7.2.4 Entity Detail Page (`app/entity/[id]/page.tsx`)
 
 Full-width page with:
 
@@ -783,7 +915,7 @@ Full-width page with:
    * top 5 donors/recipients
    * party breakdown
 
-#### Graph Explorer (`app/explore/page.tsx`)
+#### 7.2.5 Graph Explorer (`app/explore/page.tsx`)
 
 Full-screen interactive force-directed graph built with `react-force-graph-3d`.
 
@@ -871,7 +1003,7 @@ export function NetworkGraph({ data }) {
 }
 ```
 
-### 7.4 Vercel Deployment
+### 7.5 Vercel Deployment
 
 **`vercel.json`**
 
@@ -891,6 +1023,27 @@ Deploy:
 npm i -g vercel
 vercel --prod
 ```
+
+### 7.6 Acceptance Criteria (Demo Mode + Full Mode)
+
+Landing page (demo mode):
+
+1. Homepage renders with zero backend/external network calls and shows:
+   - 12+ clickable example chips
+   - 60+ headlines accessible (ticker + “more headlines” section)
+   - 30+ images rendered via `next/image` (all local paths)
+2. Scrolling “Case Files”:
+   - Changes the viz stage at least 6 times (distinct steps)
+   - Optionally updates URL state: `?case=...&step=...` without a hard navigation
+3. Clicking an example chip navigates to the correct route with the query prefilled.
+4. Mobile:
+   - Story becomes single-column
+   - Sticky viz becomes inline between cards
+
+Backend (when infra is enabled):
+
+1. `/api/news/top` returns headline cards (seeded initially; later DB-backed).
+2. `/api/search` uses hybrid Elasticsearch search as documented in Section 5.3.
 
 ---
 
@@ -1113,6 +1266,43 @@ Output ONLY the XML, nothing else.
 
 ## 9. Infrastructure Setup & Configuration
 
+### 9.0 Deployment Levels (Minimum vs Full Stack)
+
+This project is intentionally staged so the frontend demo can ship first, then auth, then the full ingestion/search/LLM stack.
+
+**Minimum to ship the UI demo (No Infra)**
+
+1. Set `NEXT_PUBLIC_DEMO_MODE=1` in the web app.
+2. Include local demo assets:
+   - `public/demo/news.json`
+   - `public/demo/cases.json`
+   - `public/demo/search_results.json`
+   - `public/demo/ask_examples.json`
+   - `public/demo/images/*` (30+ images)
+
+**Minimum to ship authenticated bookmarking**
+
+1. Supabase project (DB + Auth).
+2. Enable Google OAuth provider and redirect URLs.
+3. Set Vercel env vars for Supabase public keys (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`).
+
+**Full stack (matches this spec)**
+
+1. Supabase (DB + Auth) + schema + RLS policies.
+2. Render (FastAPI) + backend env vars.
+3. Elastic Cloud + indices + API key.
+4. JINA API key (embeddings).
+5. Modal deploy + secrets (LLM extraction + QA).
+6. Cloudflare Worker cron + ingest secret.
+7. BrightData + webhook wiring.
+8. Optional enrichers: ProPublica + FEC keys.
+
+Ordering note:
+
+- Frontend can be built against seeded JSON immediately.
+- Backend can be built against seeded data next.
+- Ingestion + LLM pipeline can come last without changing the UI contract.
+
 ### 9.1 Service Signup Checklist
 
 | Service            | What to Do                                                                                                                                            | Free Tier / Cost                              |
@@ -1324,46 +1514,52 @@ asyncio.run(seed())
 
 ## 13. Appendix: Environment Variables
 
-### 13.1 Render Backend (`.env`)
+### 13.1 Web App (`openlobby-web/.env.local`)
 
 ```bash
-# Supabase (Primary DB + Auth verification)
+# Required (demo): zero-infra landing with seeded headlines/cases/images
+NEXT_PUBLIC_DEMO_MODE=1
+
+# Required (non-demo): call backend API
+# NEXT_PUBLIC_API_URL=http://localhost:8000
+# NEXT_PUBLIC_API_URL=https://openlobby-api.onrender.com
+
+# Optional for demo, required for real accounts/bookmarks
+# NEXT_PUBLIC_SUPABASE_URL=https://xxxxxxxxxxxxxxxx.supabase.co
+# NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+```
+
+### 13.2 API (`openlobby-api/.env` or Render env vars)
+
+```bash
+# Required (if running the API at all)
+CORS_ALLOW_ORIGINS=http://localhost:3000,https://<your-vercel-domain>
+
+# Supabase (canonical DB + Auth verification; required for user endpoints and canonical storage)
 SUPABASE_URL=https://xxxxxxxxxxxxxxxx.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 SUPABASE_JWT_SECRET=your_jwt_secret
 
-# Elasticsearch
+# Elasticsearch (required in this spec; derived index)
 ELASTIC_CLOUD_ID=openlobby:dXMtY2VudHJhbDEuZ2...
 ELASTIC_API_KEY=base64encodedkey...
 
-# JINA AI
+# Embeddings (required for semantic/hybrid search)
 JINA_API_KEY=jina_xxxxxxxxxxxxxxxx
 
-# FEC
-FEC_API_KEY=your_api_data_gov_key
+# Internal auth (required for ingestion triggers/webhooks)
+INGEST_SECRET=random_generated_secret
 
-# ProPublica
+# Optional enrichers
+FEC_API_KEY=your_api_data_gov_key
 PROPUBLICA_API_KEY=your_propublica_key
 
-# BrightData
-BRIGHTDATA_API_KEY=your_brightdata_key
-
-# Modal
+# Optional (only if the API directly calls Modal)
 MODAL_TOKEN_ID=ak-xxxxxxxx
 MODAL_TOKEN_SECRET=as-xxxxxxxx
 
-# Internal Auth
-INGEST_SECRET=random_generated_secret
-```
-
-### 13.2 Vercel Frontend (`.env.local`)
-
-```bash
-NEXT_PUBLIC_API_URL=https://openlobby-api.onrender.com
-
-# Supabase Auth (Google OAuth)
-NEXT_PUBLIC_SUPABASE_URL=https://xxxxxxxxxxxxxxxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+# Optional (only if running BrightData triggers from the API)
+BRIGHTDATA_API_KEY=your_brightdata_key
 ```
 
 ### 13.3 Cloudflare Worker (wrangler secrets)
@@ -1380,6 +1576,12 @@ RENDER_API_URL=https://openlobby-api.onrender.com
 modal secret create huggingface-secret \
   HUGGING_FACE_HUB_TOKEN=hf_xxxxxxxxxxxxxxxx
 ```
+
+### 13.5 Demo Content + Legal Assumptions
+
+- Demo assets must be legally safe: use locally stored images you own or have explicit rights to.
+- Seeded headlines are either fictionalized or curated in a way you are comfortable displaying; production should link out and avoid republishing full articles.
+- “Topical” on day one means “curated and believable” until live ingestion is enabled.
 
 ---
 
